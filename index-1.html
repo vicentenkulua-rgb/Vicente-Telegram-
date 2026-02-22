@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ferry Viteoca</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
+
+:root{
+  --red:#C8102E;
+  --red-dark:#a00d24;
+  --red-light:#e8143a;
+  --green:#006B3F;
+  --white:#ffffff;
+  --gray:#f0f0f0;
+  --text:#1a1a1a;
+  --muted:#888;
+  --shadow:0 2px 12px rgba(200,16,46,0.15);
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#1a0008 0%,#C8102E 60%,#a00d24 100%);
+  padding:20px 16px 16px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.header::before{
+  content:'';position:absolute;top:-30px;right:-30px;
+  width:120px;height:120px;
+  background:rgba(255,255,255,0.06);
+  border-radius:50%;
+}
+.header::after{
+  content:'';position:absolute;bottom:-20px;left:-20px;
+  width:80px;height:80px;
+  background:rgba(0,107,63,0.3);
+  border-radius:50%;
+}
+.ferry-name{
+  font-size:32px;font-weight:900;
+  color:#ff4d6d;letter-spacing:3px;
+  text-shadow:0 2px 8px rgba(0,0,0,0.4);
+  position:relative;z-index:1;
+}
+.ferry-sub{
+  font-size:11px;letter-spacing:4px;text-transform:uppercase;
+  color:rgba(255,255,255,0.7);margin-top:4px;
+  position:relative;z-index:1;
+}
+.header-line{
+  width:40px;height:2px;background:#006B3F;
+  margin:10px auto 0;border-radius:2px;
+  position:relative;z-index:1;
+}
+
+/* BODY */
+.body{padding:16px 14px 24px;}
+
+/* SECTION LABEL */
+.sec-label{
+  font-size:10px;font-weight:700;letter-spacing:3px;
+  text-transform:uppercase;color:var(--red);
+  margin-bottom:10px;display:flex;align-items:center;gap:8px;
+}
+.sec-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(200,16,46,0.2),transparent);}
+
+/* DESTINOS - horizontal */
+.destinos-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  margin-bottom:18px;
+}
+.dest-btn{
+  border:2px solid #ddd;border-radius:14px;
+  background:#fff;padding:12px 6px;
+  text-align:center;cursor:pointer;
+  transition:all 0.2s ease;
+  position:relative;overflow:hidden;
+  box-shadow:0 2px 6px rgba(0,0,0,0.06);
+}
+.dest-btn .dest-icon{font-size:22px;display:block;margin-bottom:4px;}
+.dest-btn .dest-name{font-size:13px;font-weight:700;color:var(--text);}
+.dest-btn .dest-country{font-size:10px;color:var(--muted);margin-top:2px;}
+
+.dest-btn.selected{
+  border-color:var(--red);
+  background:linear-gradient(135deg,#fff5f7,#ffe0e6);
+  box-shadow:0 4px 14px rgba(200,16,46,0.25);
+  transform:translateY(-2px);
+}
+.dest-btn.selected .dest-name{color:var(--red);}
+.dest-btn.selected::after{
+  content:'✓';position:absolute;top:5px;right:7px;
+  font-size:10px;font-weight:900;color:var(--red);
+}
+
+/* PRECIOS - horizontal */
+.precios-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  margin-bottom:18px;
+}
+.price-btn{
+  border:2px solid #ddd;border-radius:14px;
+  background:#fff;padding:12px 6px;
+  text-align:center;cursor:pointer;
+  transition:all 0.2s ease;
+  box-shadow:0 2px 6px rgba(0,0,0,0.06);
+  position:relative;overflow:hidden;
+}
+.price-amount{
+  font-size:15px;font-weight:900;
+  color:var(--text);line-height:1;
+}
+.price-fcfa{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
+.price-type{
+  font-size:10px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;margin-top:6px;
+  padding:3px 6px;border-radius:6px;
+  display:inline-block;
+}
+
+/* Económico - verde */
+.price-btn.eco .price-type{color:var(--green);background:rgba(0,107,63,0.08);}
+.price-btn.eco.selected{
+  border-color:var(--green);
+  background:linear-gradient(135deg,#f0fff7,#d4f5e5);
+  box-shadow:0 4px 14px rgba(0,107,63,0.2);
+  transform:translateY(-2px);
+}
+.price-btn.eco.selected .price-amount{color:var(--green);}
+
+/* Business - rojo */
+.price-btn.biz .price-type{color:var(--red);background:rgba(200,16,46,0.08);}
+.price-btn.biz.selected{
+  border-color:var(--red);
+  background:linear-gradient(135deg,#fff5f7,#ffe0e6);
+  box-shadow:0 4px 14px rgba(200,16,46,0.2);
+  transform:translateY(-2px);
+}
+.price-btn.biz.selected .price-amount{color:var(--red);}
+
+/* VIP - dorado */
+.price-btn.vip .price-type{color:#b8860b;background:rgba(184,134,11,0.08);}
+.price-btn.vip.selected{
+  border-color:#b8860b;
+  background:linear-gradient(135deg,#fffdf0,#fef3c0);
+  box-shadow:0 4px 14px rgba(184,134,11,0.2);
+  transform:translateY(-2px);
+}
+.price-btn.vip.selected .price-amount{color:#b8860b;}
+
+.price-btn.selected::after{
+  content:'✓';position:absolute;top:5px;right:7px;
+  font-size:10px;font-weight:900;
+}
+.price-btn.eco.selected::after{color:var(--green);}
+.price-btn.biz.selected::after{color:var(--red);}
+.price-btn.vip.selected::after{color:#b8860b;}
+
+/* FOTO DNI */
+.upload-area{
+  border:2px dashed rgba(200,16,46,0.25);
+  border-radius:16px;background:#fff;
+  padding:24px 16px;text-align:center;
+  cursor:pointer;transition:all 0.2s;
+  position:relative;margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+}
+.upload-area:active{border-color:var(--red);background:#fff5f7;}
+.upload-area input{
+  position:absolute;inset:0;opacity:0;
+  cursor:pointer;width:100%;height:100%;
+}
+.upload-icon{font-size:34px;margin-bottom:8px;}
+.upload-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.upload-sub{font-size:12px;color:var(--muted);}
+.upload-formats{
+  display:flex;justify-content:center;gap:6px;margin-top:10px;
+}
+.fmt{
+  font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  background:#f0f0f0;border-radius:5px;padding:3px 7px;color:var(--muted);
+}
+
+/* PREVIEW */
+#preview-box{
+  display:none;border-radius:16px;overflow:hidden;
+  margin-bottom:20px;position:relative;
+  box-shadow:0 4px 16px rgba(0,0,0,0.1);
+}
+#preview-box img{width:100%;height:160px;object-fit:cover;display:block;}
+.preview-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);
+  padding:12px;display:flex;align-items:center;justify-content:space-between;
+}
+.preview-bar span{font-size:12px;color:#fff;font-weight:600;}
+.change-btn{
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+  color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;
+  font-family:inherit;
+}
+
+/* SUBMIT */
+.submit-btn{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,var(--red-light),var(--red-dark));
+  border:none;border-radius:16px;
+  color:#fff;font-size:17px;font-weight:800;
+  letter-spacing:1px;cursor:pointer;
+  box-shadow:0 6px 20px rgba(200,16,46,0.35);
+  transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
+.submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
+
+/* ANIMACIONES */
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.header{animation:slideUp 0.3s ease both;}
+.body>*{animation:slideUp 0.3s ease both;}
+.body>*:nth-child(1){animation-delay:0.05s}
+.body>*:nth-child(2){animation-delay:0.1s}
+.body>*:nth-child(3){animation-delay:0.15s}
+.body>*:nth-child(4){animation-delay:0.2s}
+.body>*:nth-child(5){animation-delay:0.25s}
+.body>*:nth-child(6){animation-delay:0.3s}
+.body>*:nth-child(7){animation-delay:0.35s}
+
+/* CIERRE */
+@keyframes fadeOut{
+  to{opacity:0;transform:scale(0.95)}
+}
+.closing{animation:fadeOut 0.3s ease forwards;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="ferry-name">FERRY VITEOCA</div>
+  <div class="ferry-sub">Reserva tu billete</div>
+  <div class="header-line"></div>
+</div>
+
+<div class="body">
+
+  <!-- DESTINO -->
+  <div class="sec-label">Destino</div>
+  <div class="destinos-row">
+    <div class="dest-btn" onclick="selectDest(this,'Malabo')">
+      <div class="dest-name">Malabo</div>
+      <div class="dest-country">Bioko</div>
+    </div>
+    <div class="dest-btn" onclick="selectDest(this,'Bata')">
+      <div class="dest-name">Bata</div>
+      <div class="dest-country">Continente</div>
+    </div>
+    <div class="dest-btn" onclick="selectDest(this,'Annobón')">
+      <div class="dest-name">Annobón</div>
+      <div class="dest-country">Isla</div>
+    </div>
+  </div>
+
+  <!-- PRECIO -->
+  <div class="sec-label">Tarifa</div>
+  <div class="precios-row">
+    <div class="price-btn eco" onclick="selectPrice(this,'35000','Económico')">
+      <div class="price-amount">35.000</div>
+      <div class="price-fcfa">FCFA</div>
+      <div class="price-type">Económico</div>
+    </div>
+    <div class="price-btn biz" onclick="selectPrice(this,'40000','Business')">
+      <div class="price-amount">40.000</div>
+      <div class="price-fcfa">FCFA</div>
+      <div class="price-type">Business</div>
+    </div>
+    <div class="price-btn vip" onclick="selectPrice(this,'50000','VIP')">
+      <div class="price-amount">50.000</div>
+      <div class="price-fcfa">FCFA</div>
+      <div class="price-type">VIP ★</div>
+    </div>
+  </div>
+
+  <!-- FOTO DNI -->
+  <div class="sec-label">Foto de Identidad</div>
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+    <div class="upload-icon">🪪</div>
+    <div class="upload-title">Adjuntar documento</div>
+    <div class="upload-sub">Toca para hacer foto o seleccionar</div>
+    <div class="upload-formats">
+      <span class="fmt">JPG</span>
+      <span class="fmt">PNG</span>
+      <span class="fmt">PDF</span>
+    </div>
+  </div>
+
+  <div id="preview-box">
+    <img id="preview-img" src="" alt="DNI">
+    <div class="preview-bar">
+      <span>✅ Documento adjuntado</span>
+      <button class="change-btn" onclick="changePhoto()">Cambiar</button>
+    </div>
+  </div>
+
+  <!-- ENVIAR -->
+  <button class="submit-btn" id="submitBtn" onclick="enviar()">
+    🚢 Confirmar Reserva
+  </button>
+
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+
+let destino='', precio='', fotoBase64='';
+
+function selectDest(el, val){
+  document.querySelectorAll('.dest-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  destino=val;
+}
+
+function selectPrice(el, val, tipo){
+  document.querySelectorAll('.price-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  precio=val;
+}
+
+function handlePhoto(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    fotoBase64=e.target.result;
+    document.getElementById('preview-img').src=fotoBase64;
+    document.getElementById('uploadArea').style.display='none';
+    document.getElementById('preview-box').style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function changePhoto(){
+  fotoBase64='';
+  document.getElementById('photoInput').value='';
+  document.getElementById('preview-box').style.display='none';
+  document.getElementById('uploadArea').style.display='block';
+}
+
+function enviar(){
+  if(!destino){alert('Selecciona un destino');return;}
+  if(!precio){alert('Selecciona una tarifa');return;}
+  if(!fotoBase64){alert('Adjunta tu foto de identidad');return;}
+
+  const data=JSON.stringify({destino, precio, foto:fotoBase64});
+
+  if(tg){
+    try{
+      tg.sendData(data);
+    }catch(e){}
+    document.body.classList.add('closing');
+    setTimeout(()=>tg.close(), 350);
+  } else {
+    alert('Reserva confirmada!\nDestino: '+destino+'\nPrecio: '+precio+' FCFA');
+  }
+}
+</script>
+</body>
+</html>
