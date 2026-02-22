@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ferry Viteoca VIP</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+/* OPTIMIZACIÓN DE RENDERIZADO */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:#F9F9FB;font-family:system-ui,-apple-system,sans-serif;overflow-x:hidden;}
+
+:root{
+  --primary: #7A102A; /* Borgoña elegante */
+  --primary-dark: #52081A;
+  --gold: #D4AF37;
+  --gold-light: #FDF9ED;
+  --text: #1C1C1E;
+  --muted: #8E8E93;
+  --bg-card: #FFFFFF;
+  --border: #E5E5EA;
+}
+
+/* HEADER PREMIUM */
+.header{
+  background:linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  padding:32px 20px 24px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  box-shadow: 0 4px 20px rgba(122,16,42,0.2);
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+}
+.header::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:150px;height:150px;
+  background:radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%);
+  border-radius:50%;
+}
+.ferry-name{
+  font-size:34px;font-weight:900;
+  color:#fff;letter-spacing:2px;
+  position:relative;z-index:1;
+}
+.ferry-name span{color:var(--gold);}
+.ferry-sub{
+  font-size:12px;letter-spacing:5px;text-transform:uppercase;
+  color:rgba(255,255,255,0.8);margin-top:6px;font-weight:500;
+  position:relative;z-index:1;
+}
+
+/* CONTENEDOR PRINCIPAL */
+.body{padding:24px 16px 30px; max-width: 500px; margin: 0 auto;}
+
+/* ETIQUETAS DE SECCIÓN */
+.sec-label{
+  font-size:11px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:12px;display:flex;align-items:center;gap:10px;
+}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* BOTONES (Destinos y Precios) */
+.grid-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+  margin-bottom:24px;
+}
+.card-btn{
+  border:1px solid var(--border);border-radius:16px;
+  background:var(--bg-card);padding:16px 8px;
+  text-align:center;cursor:pointer;
+  transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position:relative;overflow:hidden;
+}
+.card-btn .icon{font-size:24px;display:block;margin-bottom:8px;}
+.card-btn .title{font-size:14px;font-weight:700;color:var(--text);}
+.card-btn .subtitle{font-size:10px;color:var(--muted);margin-top:4px;}
+
+/* ESTADO SELECCIONADO (Elegante) */
+.card-btn.selected{
+  border-color:var(--gold);
+  background:var(--gold-light);
+  transform:translateY(-3px);
+  box-shadow:0 8px 16px rgba(212,175,55,0.15);
+}
+.card-btn.selected .title{color:var(--primary-dark);}
+.card-btn.selected::before{
+  content:'★';position:absolute;top:8px;right:10px;
+  font-size:12px;color:var(--gold);
+}
+
+/* VARIANTES DE PRECIO */
+.price-btn .title{font-size:16px;font-weight:900;line-height:1;}
+.price-tag{
+  font-size:10px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;margin-top:8px;
+  padding:4px 8px;border-radius:8px;
+  display:inline-block;background:#F2F2F7;color:var(--muted);
+}
+.price-btn.selected .price-tag{background:rgba(212,175,55,0.2);color:var(--primary-dark);}
+
+/* ÁREA DE SUBIDA DE DNI */
+.upload-area{
+  border:1.5px dashed var(--muted);
+  border-radius:20px;background:var(--bg-card);
+  padding:30px 16px;text-align:center;
+  cursor:pointer;transition:all 0.2s;
+  position:relative;margin-bottom:24px;
+}
+.upload-area:active{background:#F9F9FB;border-color:var(--primary);}
+.upload-area input{
+  position:absolute;inset:0;opacity:0;
+  cursor:pointer;width:100%;height:100%;z-index:10;
+}
+.upload-icon{font-size:32px;margin-bottom:12px;}
+.upload-title{font-size:15px;font-weight:700;color:var(--primary-dark);}
+.upload-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+
+/* PREVIEW VIP */
+#preview-box{
+  display:none;border-radius:20px;overflow:hidden;
+  margin-bottom:24px;position:relative;
+  box-shadow:0 8px 24px rgba(0,0,0,0.12);
+  border: 2px solid var(--gold);
+}
+#preview-box img{width:100%;height:180px;object-fit:cover;display:block;}
+.preview-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(28,28,30,0.85);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
+}
+.preview-bar span{font-size:13px;color:#fff;font-weight:600;}
+.change-btn{
+  background:rgba(255,255,255,0.2);border:none;
+  color:#fff;border-radius:10px;padding:6px 12px;font-size:12px;
+  font-weight:600;cursor:pointer;
+}
+
+/* BOTÓN DE ENVÍO PRECISIÓN */
+.submit-btn{
+  width:100%;padding:18px;
+  background:linear-gradient(135deg, var(--gold), #B8901C);
+  border:none;border-radius:16px;
+  color:var(--primary-dark);font-size:16px;font-weight:800;
+  letter-spacing:1px;cursor:pointer;
+  box-shadow:0 8px 20px rgba(212,175,55,0.3);
+  transition:all 0.2s;text-transform:uppercase;
+  will-change: transform;
+}
+.submit-btn:active{transform:scale(0.96);}
+
+/* ANIMACIONES LIGERAS */
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(15px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.body > *{animation:fadeInUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;}
+.body > *:nth-child(1){animation-delay:0.05s}
+.body > *:nth-child(2){animation-delay:0.1s}
+.body > *:nth-child(3){animation-delay:0.15s}
+.body > *:nth-child(4){animation-delay:0.2s}
+.body > *:nth-child(5){animation-delay:0.25s}
+.body > *:nth-child(6){animation-delay:0.3s}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="ferry-name">FERRY <span>VITEOCA</span></div>
+  <div class="ferry-sub">Pase de Abordaje VIP</div>
+</div>
+
+<div class="body">
+
+  <div class="sec-label">Seleccionar Destino</div>
+  <div class="grid-row">
+    <div class="card-btn" onclick="selectDest(this,'Malabo')">
+      <span class="icon">🏙️</span>
+      <div class="title">Malabo</div>
+      <div class="subtitle">Bioko</div>
+    </div>
+    <div class="card-btn" onclick="selectDest(this,'Bata')">
+      <span class="icon">🌿</span>
+      <div class="title">Bata</div>
+      <div class="subtitle">Continente</div>
+    </div>
+    <div class="card-btn" onclick="selectDest(this,'Annobón')">
+      <span class="icon">🏝️</span>
+      <div class="title">Annobón</div>
+      <div class="subtitle">Isla</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Seleccionar Tarifa</div>
+  <div class="grid-row">
+    <div class="card-btn price-btn" onclick="selectPrice(this,'35000')">
+      <div class="title">35K</div>
+      <div class="subtitle">FCFA</div>
+      <div class="price-tag">Básico</div>
+    </div>
+    <div class="card-btn price-btn" onclick="selectPrice(this,'40000')">
+      <div class="title">40K</div>
+      <div class="subtitle">FCFA</div>
+      <div class="price-tag">Business</div>
+    </div>
+    <div class="card-btn price-btn" onclick="selectPrice(this,'50000')">
+      <div class="title">50K</div>
+      <div class="subtitle">FCFA</div>
+      <div class="price-tag">Clase VIP</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Documento de Identidad</div>
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+    <div class="upload-icon">📷</div>
+    <div class="upload-title">Toca para escanear DNI</div>
+    <div class="upload-sub">Formatos soportados: JPG, PNG</div>
+  </div>
+
+  <div id="preview-box">
+    <img id="preview-img" src="" alt="DNI">
+    <div class="preview-bar">
+      <span>✅ Documentación validada</span>
+      <button class="change-btn" onclick="changePhoto()">Cambiar</button>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="enviar()">
+    Emitir Billete
+  </button>
+
+</div>
+
+<script>
+// Inicialización de Telegram WebApp
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+
+let destino='', precio='', fotoBase64='';
+
+// Lógica de selección visual
+function selectDest(el, val){
+  document.querySelectorAll('.card-btn:not(.price-btn)').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  destino=val;
+}
+
+function selectPrice(el, val){
+  document.querySelectorAll('.price-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  precio=val;
+}
+
+// ⚡ Lógica de Compresión de Imagen (Fundamental para la velocidad)
+function handlePhoto(input){
+  const file = input.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      // Redimensionar la imagen para no colapsar la app de Telegram
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 600; // Ancho máximo optimizado
+      const scaleSize = MAX_WIDTH / img.width;
+      
+      canvas.width = MAX_WIDTH;
+      canvas.height = img.height * scaleSize;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // Exportar como JPEG de calidad media (muy ligero)
+      fotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
+      
+      // Mostrar en la UI
+      document.getElementById('preview-img').src = fotoBase64;
+      document.getElementById('uploadArea').style.display = 'none';
+      document.getElementById('preview-box').style.display = 'block';
+    }
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function changePhoto(){
+  fotoBase64='';
+  document.getElementById('photoInput').value='';
+  document.getElementById('preview-box').style.display='none';
+  document.getElementById('uploadArea').style.display='block';
+}
+
+function enviar(){
+  if(!destino){ tg?.showAlert('Por favor, selecciona un destino.'); return; }
+  if(!precio){ tg?.showAlert('Por favor, selecciona una tarifa.'); return; }
+  if(!fotoBase64){ tg?.showAlert('El documento de identidad es obligatorio.'); return; }
+
+  const data = JSON.stringify({destino, precio, foto: fotoBase64});
+
+  if(tg && tg.initData){
+    try {
+      tg.sendData(data);
+    } catch(err) {
+      console.error(err);
+      tg.showAlert("La imagen es muy grande para enviarse por este medio. Intenta una foto de menor resolución.");
+    }
+  } else {
+    alert(`Reserva confirmada!\nDestino: ${destino}\nPrecio: ${precio} FCFA`);
+  }
+}
+</script>
+</body>
+</html>
