@@ -43,11 +43,10 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 }
 .ferry-name{
   font-size:32px;font-weight:900;
-  color:#fff;letter-spacing:3px;
+  color:#ff4d6d;letter-spacing:3px;
   text-shadow:0 2px 8px rgba(0,0,0,0.4);
   position:relative;z-index:1;
 }
-.ferry-name span{color:#ff4d6d;}
 .ferry-sub{
   font-size:11px;letter-spacing:4px;text-transform:uppercase;
   color:rgba(255,255,255,0.7);margin-top:4px;
@@ -245,7 +244,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 <body>
 
 <div class="header">
-  <div class="ferry-name">FERRY <span>VITEOCA</span></div>
+  <div class="ferry-name">FERRY VITEOCA</div>
   <div class="ferry-sub">Reserva tu billete</div>
   <div class="header-line"></div>
 </div>
@@ -256,17 +255,14 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
   <div class="sec-label">Destino</div>
   <div class="destinos-row">
     <div class="dest-btn" onclick="selectDest(this,'Malabo')">
-      <span class="dest-icon">🏙️</span>
       <div class="dest-name">Malabo</div>
       <div class="dest-country">Bioko</div>
     </div>
     <div class="dest-btn" onclick="selectDest(this,'Bata')">
-      <span class="dest-icon">🌿</span>
       <div class="dest-name">Bata</div>
       <div class="dest-country">Continente</div>
     </div>
     <div class="dest-btn" onclick="selectDest(this,'Annobón')">
-      <span class="dest-icon">🏝️</span>
       <div class="dest-name">Annobón</div>
       <div class="dest-country">Isla</div>
     </div>
@@ -367,9 +363,11 @@ function enviar(){
   const data=JSON.stringify({destino, precio, foto:fotoBase64});
 
   if(tg){
-    tg.sendData(data);
+    try{
+      tg.sendData(data);
+    }catch(e){}
     document.body.classList.add('closing');
-    setTimeout(()=>tg.close(), 300);
+    setTimeout(()=>tg.close(), 350);
   } else {
     alert('Reserva confirmada!\nDestino: '+destino+'\nPrecio: '+precio+' FCFA');
   }
