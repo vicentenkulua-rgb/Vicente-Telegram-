@@ -2,662 +2,378 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Reserva de Vuelo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ferry Viteoca</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
 
-  :root {
-    --tg-bg: #0a0f1a;
-    --card-bg: #111827;
-    --accent: #00d4ff;
-    --accent2: #ff6b35;
-    --text: #e8edf5;
-    --muted: #6b7a99;
-    --border: rgba(0, 212, 255, 0.15);
-    --input-bg: #1a2336;
-    --success: #00e676;
-  }
+:root{
+  --red:#C8102E;
+  --red-dark:#a00d24;
+  --red-light:#e8143a;
+  --green:#006B3F;
+  --white:#ffffff;
+  --gray:#f0f0f0;
+  --text:#1a1a1a;
+  --muted:#888;
+  --shadow:0 2px 12px rgba(200,16,46,0.15);
+}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#1a0008 0%,#C8102E 60%,#a00d24 100%);
+  padding:20px 16px 16px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.header::before{
+  content:'';position:absolute;top:-30px;right:-30px;
+  width:120px;height:120px;
+  background:rgba(255,255,255,0.06);
+  border-radius:50%;
+}
+.header::after{
+  content:'';position:absolute;bottom:-20px;left:-20px;
+  width:80px;height:80px;
+  background:rgba(0,107,63,0.3);
+  border-radius:50%;
+}
+.ferry-name{
+  font-size:32px;font-weight:900;
+  color:#fff;letter-spacing:3px;
+  text-shadow:0 2px 8px rgba(0,0,0,0.4);
+  position:relative;z-index:1;
+}
+.ferry-name span{color:#ff4d6d;}
+.ferry-sub{
+  font-size:11px;letter-spacing:4px;text-transform:uppercase;
+  color:rgba(255,255,255,0.7);margin-top:4px;
+  position:relative;z-index:1;
+}
+.header-line{
+  width:40px;height:2px;background:#006B3F;
+  margin:10px auto 0;border-radius:2px;
+  position:relative;z-index:1;
+}
 
-  body {
-    background: var(--tg-bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    padding: 0 0 80px;
-    overflow-x: hidden;
-  }
+/* BODY */
+.body{padding:16px 14px 24px;}
 
-  /* Header */
-  .header {
-    background: linear-gradient(135deg, #0d1b2e 0%, #0a1628 100%);
-    padding: 28px 20px 24px;
-    position: relative;
-    overflow: hidden;
-    border-bottom: 1px solid var(--border);
-  }
+/* SECTION LABEL */
+.sec-label{
+  font-size:10px;font-weight:700;letter-spacing:3px;
+  text-transform:uppercase;color:var(--red);
+  margin-bottom:10px;display:flex;align-items:center;gap:8px;
+}
+.sec-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(200,16,46,0.2),transparent);}
 
-  .header::before {
-    content: '';
-    position: absolute;
-    top: -40px; right: -40px;
-    width: 160px; height: 160px;
-    background: radial-gradient(circle, rgba(0,212,255,0.12) 0%, transparent 70%);
-    border-radius: 50%;
-  }
+/* DESTINOS - horizontal */
+.destinos-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  margin-bottom:18px;
+}
+.dest-btn{
+  border:2px solid #ddd;border-radius:14px;
+  background:#fff;padding:12px 6px;
+  text-align:center;cursor:pointer;
+  transition:all 0.2s ease;
+  position:relative;overflow:hidden;
+  box-shadow:0 2px 6px rgba(0,0,0,0.06);
+}
+.dest-btn .dest-icon{font-size:22px;display:block;margin-bottom:4px;}
+.dest-btn .dest-name{font-size:13px;font-weight:700;color:var(--text);}
+.dest-btn .dest-country{font-size:10px;color:var(--muted);margin-top:2px;}
 
-  .header::after {
-    content: '';
-    position: absolute;
-    bottom: -20px; left: -20px;
-    width: 100px; height: 100px;
-    background: radial-gradient(circle, rgba(255,107,53,0.1) 0%, transparent 70%);
-    border-radius: 50%;
-  }
+.dest-btn.selected{
+  border-color:var(--red);
+  background:linear-gradient(135deg,#fff5f7,#ffe0e6);
+  box-shadow:0 4px 14px rgba(200,16,46,0.25);
+  transform:translateY(-2px);
+}
+.dest-btn.selected .dest-name{color:var(--red);}
+.dest-btn.selected::after{
+  content:'✓';position:absolute;top:5px;right:7px;
+  font-size:10px;font-weight:900;color:var(--red);
+}
 
-  .airline-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(0,212,255,0.08);
-    border: 1px solid rgba(0,212,255,0.2);
-    border-radius: 20px;
-    padding: 5px 12px;
-    margin-bottom: 12px;
-  }
+/* PRECIOS - horizontal */
+.precios-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  margin-bottom:18px;
+}
+.price-btn{
+  border:2px solid #ddd;border-radius:14px;
+  background:#fff;padding:12px 6px;
+  text-align:center;cursor:pointer;
+  transition:all 0.2s ease;
+  box-shadow:0 2px 6px rgba(0,0,0,0.06);
+  position:relative;overflow:hidden;
+}
+.price-amount{
+  font-size:15px;font-weight:900;
+  color:var(--text);line-height:1;
+}
+.price-fcfa{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
+.price-type{
+  font-size:10px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;margin-top:6px;
+  padding:3px 6px;border-radius:6px;
+  display:inline-block;
+}
 
-  .airline-badge span {
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-weight: 600;
-  }
+/* Económico - verde */
+.price-btn.eco .price-type{color:var(--green);background:rgba(0,107,63,0.08);}
+.price-btn.eco.selected{
+  border-color:var(--green);
+  background:linear-gradient(135deg,#f0fff7,#d4f5e5);
+  box-shadow:0 4px 14px rgba(0,107,63,0.2);
+  transform:translateY(-2px);
+}
+.price-btn.eco.selected .price-amount{color:var(--green);}
 
-  .plane-icon { font-size: 14px; }
+/* Business - rojo */
+.price-btn.biz .price-type{color:var(--red);background:rgba(200,16,46,0.08);}
+.price-btn.biz.selected{
+  border-color:var(--red);
+  background:linear-gradient(135deg,#fff5f7,#ffe0e6);
+  box-shadow:0 4px 14px rgba(200,16,46,0.2);
+  transform:translateY(-2px);
+}
+.price-btn.biz.selected .price-amount{color:var(--red);}
 
-  .header h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 38px;
-    letter-spacing: 1px;
-    line-height: 1;
-    color: var(--text);
-  }
+/* VIP - dorado */
+.price-btn.vip .price-type{color:#b8860b;background:rgba(184,134,11,0.08);}
+.price-btn.vip.selected{
+  border-color:#b8860b;
+  background:linear-gradient(135deg,#fffdf0,#fef3c0);
+  box-shadow:0 4px 14px rgba(184,134,11,0.2);
+  transform:translateY(-2px);
+}
+.price-btn.vip.selected .price-amount{color:#b8860b;}
 
-  .header h1 span { color: var(--accent); }
+.price-btn.selected::after{
+  content:'✓';position:absolute;top:5px;right:7px;
+  font-size:10px;font-weight:900;
+}
+.price-btn.eco.selected::after{color:var(--green);}
+.price-btn.biz.selected::after{color:var(--red);}
+.price-btn.vip.selected::after{color:#b8860b;}
 
-  .header p {
-    margin-top: 6px;
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 300;
-  }
+/* FOTO DNI */
+.upload-area{
+  border:2px dashed rgba(200,16,46,0.25);
+  border-radius:16px;background:#fff;
+  padding:24px 16px;text-align:center;
+  cursor:pointer;transition:all 0.2s;
+  position:relative;margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+}
+.upload-area:active{border-color:var(--red);background:#fff5f7;}
+.upload-area input{
+  position:absolute;inset:0;opacity:0;
+  cursor:pointer;width:100%;height:100%;
+}
+.upload-icon{font-size:34px;margin-bottom:8px;}
+.upload-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.upload-sub{font-size:12px;color:var(--muted);}
+.upload-formats{
+  display:flex;justify-content:center;gap:6px;margin-top:10px;
+}
+.fmt{
+  font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  background:#f0f0f0;border-radius:5px;padding:3px 7px;color:var(--muted);
+}
 
-  /* Form Container */
-  .form-body {
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
+/* PREVIEW */
+#preview-box{
+  display:none;border-radius:16px;overflow:hidden;
+  margin-bottom:20px;position:relative;
+  box-shadow:0 4px 16px rgba(0,0,0,0.1);
+}
+#preview-box img{width:100%;height:160px;object-fit:cover;display:block;}
+.preview-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);
+  padding:12px;display:flex;align-items:center;justify-content:space-between;
+}
+.preview-bar span{font-size:12px;color:#fff;font-weight:600;}
+.change-btn{
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+  color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;
+  font-family:inherit;
+}
 
-  .section-label {
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-weight: 600;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+/* SUBMIT */
+.submit-btn{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,var(--red-light),var(--red-dark));
+  border:none;border-radius:16px;
+  color:#fff;font-size:17px;font-weight:800;
+  letter-spacing:1px;cursor:pointer;
+  box-shadow:0 6px 20px rgba(200,16,46,0.35);
+  transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
+.submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
 
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(to right, var(--border), transparent);
-  }
+/* ANIMACIONES */
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.header{animation:slideUp 0.3s ease both;}
+.body>*{animation:slideUp 0.3s ease both;}
+.body>*:nth-child(1){animation-delay:0.05s}
+.body>*:nth-child(2){animation-delay:0.1s}
+.body>*:nth-child(3){animation-delay:0.15s}
+.body>*:nth-child(4){animation-delay:0.2s}
+.body>*:nth-child(5){animation-delay:0.25s}
+.body>*:nth-child(6){animation-delay:0.3s}
+.body>*:nth-child(7){animation-delay:0.35s}
 
-  .field-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    transition: border-color 0.3s;
-  }
-
-  .field-card:focus-within {
-    border-color: rgba(0,212,255,0.5);
-    box-shadow: 0 0 0 3px rgba(0,212,255,0.06);
-  }
-
-  .field-inner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px;
-  }
-
-  .field-icon {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    background: rgba(0,212,255,0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-
-  .field-content { flex: 1; }
-
-  .field-content label {
-    display: block;
-    font-size: 11px;
-    color: var(--muted);
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-  }
-
-  .field-content select,
-  .field-content input[type="text"],
-  .field-content input[type="tel"],
-  .field-content input[type="email"] {
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
-    -webkit-appearance: none;
-    cursor: pointer;
-  }
-
-  .field-content select option {
-    background: #1a2336;
-    color: var(--text);
-  }
-
-  /* Price Cards */
-  .price-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-
-  .price-option {
-    position: relative;
-  }
-
-  .price-option input[type="radio"] {
-    position: absolute;
-    opacity: 0;
-    width: 0; height: 0;
-  }
-
-  .price-option label {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 14px 8px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    cursor: pointer;
-    transition: all 0.25s;
-    text-align: center;
-    gap: 4px;
-  }
-
-  .price-option label .price-tag {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    color: var(--text);
-    letter-spacing: 1px;
-    line-height: 1;
-  }
-
-  .price-option label .price-unit {
-    font-size: 9px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .price-option label .price-tier {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .price-option input:checked + label {
-    border-color: var(--accent);
-    background: rgba(0,212,255,0.08);
-    box-shadow: 0 0 20px rgba(0,212,255,0.1);
-  }
-
-  .price-option input:checked + label .price-tag { color: var(--accent); }
-
-  .tier-basic .price-tier { color: #6b7a99; }
-  .tier-standard .price-tier { color: #ffd166; }
-  .tier-premium .price-tier { color: var(--accent2); }
-
-  .price-option input:checked + .tier-basic { border-color: #6b7a99; background: rgba(107,122,153,0.08); }
-  .price-option input:checked + .tier-basic .price-tag { color: #c0c9db; }
-  .price-option input:checked + .tier-standard { border-color: #ffd166; background: rgba(255,209,102,0.08); }
-  .price-option input:checked + .tier-standard .price-tag { color: #ffd166; }
-
-  /* Photo Upload */
-  .upload-zone {
-    background: var(--card-bg);
-    border: 1.5px dashed rgba(0,212,255,0.25);
-    border-radius: 16px;
-    padding: 28px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .upload-zone:hover, .upload-zone.drag-over {
-    border-color: var(--accent);
-    background: rgba(0,212,255,0.04);
-  }
-
-  .upload-zone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-
-  .upload-icon {
-    font-size: 36px;
-    margin-bottom: 10px;
-  }
-
-  .upload-zone h3 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  .upload-zone p {
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  .upload-zone .formats {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 12px;
-  }
-
-  .format-badge {
-    font-size: 10px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 6px;
-    padding: 3px 7px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  /* Preview */
-  #preview-container {
-    display: none;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    position: relative;
-  }
-
-  #preview-container img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    display: block;
-  }
-
-  .preview-overlay {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    background: linear-gradient(to top, rgba(10,15,26,0.95), transparent);
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .preview-overlay span {
-    font-size: 12px;
-    color: var(--success);
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .remove-photo {
-    background: rgba(255,80,80,0.15);
-    border: 1px solid rgba(255,80,80,0.3);
-    color: #ff6b6b;
-    border-radius: 8px;
-    padding: 5px 10px;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  /* Submit */
-  .submit-wrapper {
-    padding: 0 16px;
-  }
-
-  .submit-btn {
-    width: 100%;
-    padding: 18px;
-    background: linear-gradient(135deg, #00b4d8, #00d4ff);
-    border: none;
-    border-radius: 16px;
-    color: #000;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    letter-spacing: 2px;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .submit-btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .submit-btn:hover::before { opacity: 1; }
-
-  .submit-btn:active {
-    transform: scale(0.98);
-  }
-
-  .submit-btn:disabled {
-    background: #1a2336;
-    color: var(--muted);
-    cursor: not-allowed;
-  }
-
-  /* Divider */
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 4px;
-  }
-
-  .divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  .divider span {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  /* Passenger fields */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .form-body > * {
-    animation: fadeUp 0.4s ease both;
-  }
-
-  .form-body > *:nth-child(1) { animation-delay: 0.05s; }
-  .form-body > *:nth-child(2) { animation-delay: 0.1s; }
-  .form-body > *:nth-child(3) { animation-delay: 0.15s; }
-  .form-body > *:nth-child(4) { animation-delay: 0.2s; }
-  .form-body > *:nth-child(5) { animation-delay: 0.25s; }
-  .form-body > *:nth-child(6) { animation-delay: 0.3s; }
-  .form-body > *:nth-child(7) { animation-delay: 0.35s; }
+/* CIERRE */
+@keyframes fadeOut{
+  to{opacity:0;transform:scale(0.95)}
+}
+.closing{animation:fadeOut 0.3s ease forwards;}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header">
-  <div class="airline-badge">
-    <span class="plane-icon">✈️</span>
-    <span>Guinea Ecuatorial Air</span>
-  </div>
-  <h1>RESERVA<br>TU <span>VUELO</span></h1>
-  <p>Ruta Malabo → Annobón</p>
+  <div class="ferry-name">FERRY <span>VITEOCA</span></div>
+  <div class="ferry-sub">Reserva tu billete</div>
+  <div class="header-line"></div>
 </div>
 
-<!-- FORM -->
-<form id="bookingForm">
-  <div class="form-body">
+<div class="body">
 
-    <!-- DESTINO -->
-    <div class="section-label">Destino</div>
-
-    <div class="field-card">
-      <div class="field-inner">
-        <div class="field-icon">🗺️</div>
-        <div class="field-content">
-          <label>Ruta de vuelo</label>
-          <select id="destino" required>
-            <option value="" disabled selected>Seleccionar ruta</option>
-            <option value="malabo-annobon">Malabo → Annobón</option>
-            <option value="annobon-malabo">Annobón → Malabo</option>
-          </select>
-        </div>
-        <span style="color:var(--muted); font-size:12px;">›</span>
-      </div>
+  <!-- DESTINO -->
+  <div class="sec-label">Destino</div>
+  <div class="destinos-row">
+    <div class="dest-btn" onclick="selectDest(this,'Malabo')">
+      <span class="dest-icon">🏙️</span>
+      <div class="dest-name">Malabo</div>
+      <div class="dest-country">Bioko</div>
     </div>
-
-    <!-- PRECIO -->
-    <div class="section-label">Tarifa</div>
-
-    <div class="price-grid">
-      <div class="price-option">
-        <input type="radio" name="precio" id="p35" value="35000" required>
-        <label for="p35" class="tier-basic">
-          <span class="price-tier">Básica</span>
-          <span class="price-tag">35K</span>
-          <span class="price-unit">FCFA</span>
-        </label>
-      </div>
-      <div class="price-option">
-        <input type="radio" name="precio" id="p45" value="45000">
-        <label for="p45" class="tier-standard">
-          <span class="price-tier">Estándar</span>
-          <span class="price-tag">45K</span>
-          <span class="price-unit">FCFA</span>
-        </label>
-      </div>
-      <div class="price-option">
-        <input type="radio" name="precio" id="p55" value="55000">
-        <label for="p55" class="tier-premium">
-          <span class="price-tier">Premium</span>
-          <span class="price-tag">55K</span>
-          <span class="price-unit">FCFA</span>
-        </label>
-      </div>
+    <div class="dest-btn" onclick="selectDest(this,'Bata')">
+      <span class="dest-icon">🌿</span>
+      <div class="dest-name">Bata</div>
+      <div class="dest-country">Continente</div>
     </div>
-
-    <!-- PASAJERO -->
-    <div class="section-label">Pasajero</div>
-
-    <div class="two-col">
-      <div class="field-card">
-        <div class="field-inner" style="padding: 14px;">
-          <div class="field-content">
-            <label>Nombre</label>
-            <input type="text" id="nombre" placeholder="Ej: Juan" required>
-          </div>
-        </div>
-      </div>
-      <div class="field-card">
-        <div class="field-inner" style="padding: 14px;">
-          <div class="field-content">
-            <label>Apellidos</label>
-            <input type="text" id="apellidos" placeholder="Ej: Mba Ela" required>
-          </div>
-        </div>
-      </div>
+    <div class="dest-btn" onclick="selectDest(this,'Annobón')">
+      <span class="dest-icon">🏝️</span>
+      <div class="dest-name">Annobón</div>
+      <div class="dest-country">Isla</div>
     </div>
-
-    <div class="field-card">
-      <div class="field-inner">
-        <div class="field-icon">📱</div>
-        <div class="field-content">
-          <label>Teléfono</label>
-          <input type="tel" id="telefono" placeholder="+240 222 000 000" required>
-        </div>
-      </div>
-    </div>
-
-    <!-- FOTO ID -->
-    <div class="section-label">Documento de identidad</div>
-
-    <div class="upload-zone" id="uploadZone">
-      <input type="file" id="photoId" accept="image/*" capture="environment">
-      <div class="upload-icon">🪪</div>
-      <h3>Adjuntar foto del DNI</h3>
-      <p>Toca para seleccionar o hacer foto</p>
-      <div class="formats">
-        <span class="format-badge">JPG</span>
-        <span class="format-badge">PNG</span>
-        <span class="format-badge">PDF</span>
-      </div>
-    </div>
-
-    <div id="preview-container">
-      <img id="preview-img" src="" alt="Documento">
-      <div class="preview-overlay">
-        <span>✅ Documento adjuntado</span>
-        <button type="button" class="remove-photo" onclick="removePhoto()">Cambiar</button>
-      </div>
-    </div>
-
   </div>
 
-  <!-- SUBMIT -->
-  <div class="submit-wrapper">
-    <button type="submit" class="submit-btn" id="submitBtn">
-      ✈ CONFIRMAR RESERVA
-    </button>
+  <!-- PRECIO -->
+  <div class="sec-label">Tarifa</div>
+  <div class="precios-row">
+    <div class="price-btn eco" onclick="selectPrice(this,'35000','Económico')">
+      <div class="price-amount">35.000</div>
+      <div class="price-fcfa">FCFA</div>
+      <div class="price-type">Económico</div>
+    </div>
+    <div class="price-btn biz" onclick="selectPrice(this,'40000','Business')">
+      <div class="price-amount">40.000</div>
+      <div class="price-fcfa">FCFA</div>
+      <div class="price-type">Business</div>
+    </div>
+    <div class="price-btn vip" onclick="selectPrice(this,'50000','VIP')">
+      <div class="price-amount">50.000</div>
+      <div class="price-fcfa">FCFA</div>
+      <div class="price-type">VIP ★</div>
+    </div>
   </div>
-</form>
+
+  <!-- FOTO DNI -->
+  <div class="sec-label">Foto de Identidad</div>
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+    <div class="upload-icon">🪪</div>
+    <div class="upload-title">Adjuntar documento</div>
+    <div class="upload-sub">Toca para hacer foto o seleccionar</div>
+    <div class="upload-formats">
+      <span class="fmt">JPG</span>
+      <span class="fmt">PNG</span>
+      <span class="fmt">PDF</span>
+    </div>
+  </div>
+
+  <div id="preview-box">
+    <img id="preview-img" src="" alt="DNI">
+    <div class="preview-bar">
+      <span>✅ Documento adjuntado</span>
+      <button class="change-btn" onclick="changePhoto()">Cambiar</button>
+    </div>
+  </div>
+
+  <!-- ENVIAR -->
+  <button class="submit-btn" id="submitBtn" onclick="enviar()">
+    🚢 Confirmar Reserva
+  </button>
+
+</div>
 
 <script>
-  // Init Telegram WebApp
-  const tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.ready();
-    tg.expand();
-    tg.MainButton.setText('CONFIRMAR RESERVA');
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+
+let destino='', precio='', fotoBase64='';
+
+function selectDest(el, val){
+  document.querySelectorAll('.dest-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  destino=val;
+}
+
+function selectPrice(el, val, tipo){
+  document.querySelectorAll('.price-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  precio=val;
+}
+
+function handlePhoto(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    fotoBase64=e.target.result;
+    document.getElementById('preview-img').src=fotoBase64;
+    document.getElementById('uploadArea').style.display='none';
+    document.getElementById('preview-box').style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function changePhoto(){
+  fotoBase64='';
+  document.getElementById('photoInput').value='';
+  document.getElementById('preview-box').style.display='none';
+  document.getElementById('uploadArea').style.display='block';
+}
+
+function enviar(){
+  if(!destino){alert('Selecciona un destino');return;}
+  if(!precio){alert('Selecciona una tarifa');return;}
+  if(!fotoBase64){alert('Adjunta tu foto de identidad');return;}
+
+  const data=JSON.stringify({destino, precio, foto:fotoBase64});
+
+  if(tg){
+    tg.sendData(data);
+    document.body.classList.add('closing');
+    setTimeout(()=>tg.close(), 300);
+  } else {
+    alert('Reserva confirmada!\nDestino: '+destino+'\nPrecio: '+precio+' FCFA');
   }
-
-  // File preview
-  const photoInput = document.getElementById('photoId');
-  const uploadZone = document.getElementById('uploadZone');
-  const previewContainer = document.getElementById('preview-container');
-  const previewImg = document.getElementById('preview-img');
-
-  photoInput.addEventListener('change', function() {
-    const file = this.files[0];
-    if (!file) return;
-
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        previewImg.src = e.target.result;
-        uploadZone.style.display = 'none';
-        previewContainer.style.display = 'block';
-      };
-      reader.readAsDataURL(file);
-    } else {
-      uploadZone.querySelector('h3').textContent = file.name;
-      uploadZone.querySelector('p').textContent = 'Archivo seleccionado ✓';
-      uploadZone.style.borderColor = 'var(--success)';
-    }
-  });
-
-  function removePhoto() {
-    photoInput.value = '';
-    previewContainer.style.display = 'none';
-    uploadZone.style.display = 'block';
-    uploadZone.querySelector('h3').textContent = 'Adjuntar foto del DNI';
-    uploadZone.querySelector('p').textContent = 'Toca para seleccionar o hacer foto';
-    uploadZone.style.borderColor = '';
-  }
-
-  // Submit
-  document.getElementById('bookingForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const destino = document.getElementById('destino').value;
-    const precio = document.querySelector('input[name="precio"]:checked')?.value;
-    const nombre = document.getElementById('nombre').value.trim();
-    const apellidos = document.getElementById('apellidos').value.trim();
-    const telefono = document.getElementById('telefono').value.trim();
-    const foto = photoInput.files[0];
-
-    if (!destino || !precio || !nombre || !apellidos || !telefono) {
-      alert('Por favor completa todos los campos obligatorios.');
-      return;
-    }
-
-    const data = {
-      destino,
-      precio: `${parseInt(precio).toLocaleString()} FCFA`,
-      pasajero: `${nombre} ${apellidos}`,
-      telefono,
-      fotoAdjunta: !!foto,
-    };
-
-    if (tg) {
-      tg.sendData(JSON.stringify(data));
-    } else {
-      alert(`✅ Reserva recibida!\n\nRuta: ${data.destino}\nTarifa: ${data.precio}\nPasajero: ${data.pasajero}\nTel: ${data.telefono}`);
-    }
-  });
+}
 </script>
 </body>
 </html>
