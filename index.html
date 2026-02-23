@@ -368,7 +368,7 @@ async function enviar(){
   const username=tg?.initDataUnsafe?.user?.username || '';
 
   try{
-    await fetch('https://bery55.app.n8n.cloud/webhook-test/920417b7-c4a7-4747-97e7-759441ee66fa',{
+    await fetch('https://bery55.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({destino, precio, foto:fotoBase64, chat_id:chatId, username})
