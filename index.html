@@ -321,7 +321,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 
-let destino='', precio='', fotoFile=null;
+let destino='', precio='', fotoBase64='';
 
 function selectDest(el, val){
   document.querySelectorAll('.dest-btn').forEach(b=>b.classList.remove('selected'));
@@ -338,10 +338,10 @@ function selectPrice(el, val){
 function handlePhoto(input){
   const file=input.files[0];
   if(!file)return;
-  fotoFile=file;
   const reader=new FileReader();
   reader.onload=e=>{
-    document.getElementById('preview-img').src=e.target.result;
+    fotoBase64=e.target.result;
+    document.getElementById('preview-img').src=fotoBase64;
     document.getElementById('uploadArea').style.display='none';
     document.getElementById('preview-box').style.display='block';
   };
@@ -349,7 +349,7 @@ function handlePhoto(input){
 }
 
 function changePhoto(){
-  fotoFile=null;
+  fotoBase64='';
   document.getElementById('photoInput').value='';
   document.getElementById('preview-box').style.display='none';
   document.getElementById('uploadArea').style.display='block';
@@ -358,7 +358,7 @@ function changePhoto(){
 async function enviar(){
   if(!destino){alert('Selecciona un destino');return;}
   if(!precio){alert('Selecciona una tarifa');return;}
-  if(!fotoFile){alert('Adjunta tu foto de identidad');return;}
+  if(!fotoBase64){alert('Adjunta tu foto de identidad');return;}
 
   const btn=document.getElementById('submitBtn');
   btn.disabled=true;
@@ -367,17 +367,11 @@ async function enviar(){
   const chatId=tg?.initDataUnsafe?.user?.id || '';
   const username=tg?.initDataUnsafe?.user?.username || '';
 
-  const formData=new FormData();
-  formData.append('destino', destino);
-  formData.append('precio', precio);
-  formData.append('chat_id', chatId);
-  formData.append('username', username);
-  formData.append('foto', fotoFile, fotoFile.name);
-
   try{
     await fetch('https://bery55.app.n8n.cloud/webhook-test/920417b7-c4a7-4747-97e7-759441ee66fa',{
       method:'POST',
-      body:formData
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({destino, precio, foto:fotoBase64, chat_id:chatId, username})
     });
     document.body.classList.add('closing');
     setTimeout(()=>{
