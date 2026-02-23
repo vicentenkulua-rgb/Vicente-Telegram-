@@ -355,21 +355,31 @@ function changePhoto(){
   document.getElementById('uploadArea').style.display='block';
 }
 
-function enviar(){
+async function enviar(){
   if(!destino){alert('Selecciona un destino');return;}
   if(!precio){alert('Selecciona una tarifa');return;}
   if(!fotoBase64){alert('Adjunta tu foto de identidad');return;}
 
-  const data=JSON.stringify({destino, precio, foto:fotoBase64});
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;
+  btn.textContent='Enviando...';
 
-  if(tg){
-    try{
-      tg.sendData(data);
-    }catch(e){}
+  const chatId=tg?.initDataUnsafe?.user?.id || null;
+
+  try{
+    await fetch('https://bery55.app.n8n.cloud/webhook-test/920417b7-c4a7-4747-97e7-759441ee66fa',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({destino, precio, foto:fotoBase64, chat_id:chatId})
+    });
     document.body.classList.add('closing');
-    setTimeout(()=>tg.close(), 350);
-  } else {
-    alert('Reserva confirmada!\nDestino: '+destino+'\nPrecio: '+precio+' FCFA');
+    setTimeout(()=>{
+      if(tg) tg.close();
+    },350);
+  }catch(e){
+    btn.disabled=false;
+    btn.textContent='🚢 Confirmar Reserva';
+    alert('Error al enviar. Inténtalo de nuevo.');
   }
 }
 </script>
