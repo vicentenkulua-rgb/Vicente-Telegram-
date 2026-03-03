@@ -330,47 +330,62 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
   sbtn.addEventListener('click',function(){
     if(!destino){alert('Selecciona un destino');return;}
     if(!precio){alert('Selecciona una tarifa');return;}
-    if(!fotoB64){alert('Adjunta tu foto de identidad');return;}
+    if(!fotoFile){alert('Adjunta tu foto de identidad');return;}
 
     sbtn.disabled=true;
     sbtn.textContent='Enviando…';
 
     var uid=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user;
-    var chatId=uid?uid.id:'';
-    var username=uid?uid.username||'':{};
+    var chatId=uid?String(uid.id):'';
+    var username=uid?(uid.username||uid.first_name||''):'';
 
     /*
-      fetch con AbortController y timeout de 20 s para no dejar al usuario
-      esperando indefinidamente en redes lentas.
+      SOLUCIÓN CORS + n8n:
+      - multipart/form-data en lugar de JSON → n8n lo recibe sin configuración extra
+      - NO se pone Content-Type manualmente (el browser lo pone con el boundary correcto)
+      - La foto se adjunta como Blob real, no como base64 string
+        → n8n recibe un campo "foto" como archivo binario, más pequeño y más rápido
     */
+    var fd=new FormData();
+    fd.append('destino', destino);
+    fd.append('precio',  precio);
+    fd.append('chat_id', chatId);
+    fd.append('username',username);
+
+    // Convertir base64 a Blob para enviar como archivo real
+    var b64data=fotoB64.split(',')[1];
+    var mime=fotoFile.type||'image/jpeg';
+    var bytes=atob(b64data);
+    var arr=new Uint8Array(bytes.length);
+    for(var i=0;i<bytes.length;i++){arr[i]=bytes.charCodeAt(i);}
+    var blob=new Blob([arr],{type:mime});
+    fd.append('foto', blob, fotoFile.name||'documento.jpg');
+
     var ac=new AbortController();
-    var timer=setTimeout(function(){ac.abort();},20000);
+    var timer=setTimeout(function(){ac.abort();},30000);
 
     fetch('https://ferry50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        destino:destino,
-        precio:precio,
-        foto:fotoB64,
-        chat_id:chatId,
-        username:username
-      }),
+      body:fd,           // SIN headers → browser gestiona Content-Type+boundary
       signal:ac.signal
     })
     .then(function(res){
       clearTimeout(timer);
-      if(!res.ok)throw new Error('HTTP '+res.status);
-      document.body.classList.add('closing');
-      setTimeout(function(){if(tg)tg.close();},320);
+      // n8n devuelve 200 incluso en flujos simples; aceptamos 200-299
+      if(res.status>=200&&res.status<300){
+        document.body.classList.add('closing');
+        setTimeout(function(){if(tg)tg.close();},320);
+      } else {
+        throw new Error('HTTP '+res.status);
+      }
     })
     .catch(function(err){
       clearTimeout(timer);
       sbtn.disabled=false;
       sbtn.innerHTML='🚢 Confirmar Reserva';
       var msg=err.name==='AbortError'
-        ?'Tiempo de espera agotado. Verifica tu conexión.'
-        :'Error al enviar. Inténtalo de nuevo.';
+        ?'⏱ Tiempo agotado. Verifica tu conexión e intenta de nuevo.'
+        :'❌ Error: '+err.message+'\nInténtalo de nuevo.';
       alert(msg);
     });
   });
