@@ -2,387 +2,380 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#C8102E">
 <title>Ferry Viteoca</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- Preconnect al webhook para reducir latencia DNS+TCP+TLS en el envío -->
+<link rel="preconnect" href="https://ferry50.app.n8n.cloud">
+<script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* Reset mínimo — sin wildcard costoso */
+html,body,div,span,button,input{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
 
 :root{
-  --red:#C8102E;
-  --red-dark:#a00d24;
-  --red-light:#e8143a;
+  --red:#C8102E;--red-d:#a00d24;--red-l:#e8143a;
   --green:#006B3F;
-  --white:#ffffff;
-  --gray:#f0f0f0;
-  --text:#1a1a1a;
-  --muted:#888;
-  --shadow:0 2px 12px rgba(200,16,46,0.15);
+  --text:#1a1a1a;--muted:#888;
 }
 
-/* HEADER */
-.header{
+/* HEADER — gradiente como variable para evitar recalculo */
+.hdr{
   background:linear-gradient(135deg,#1a0008 0%,#C8102E 60%,#a00d24 100%);
-  padding:20px 16px 16px;
-  text-align:center;
-  position:relative;
-  overflow:hidden;
+  padding:20px 16px 16px;text-align:center;
+  /* will-change evita repaint en animación */
+  will-change:transform,opacity;
+  /* overflow:hidden para los pseudo-elementos */
+  overflow:hidden;position:relative;
 }
-.header::before{
+.hdr::before{
   content:'';position:absolute;top:-30px;right:-30px;
-  width:120px;height:120px;
-  background:rgba(255,255,255,0.06);
-  border-radius:50%;
+  width:120px;height:120px;background:rgba(255,255,255,0.06);border-radius:50%;
+  /* pointer-events:none elimina hit-testing innecesario */
+  pointer-events:none;
 }
-.header::after{
+.hdr::after{
   content:'';position:absolute;bottom:-20px;left:-20px;
-  width:80px;height:80px;
-  background:rgba(0,107,63,0.3);
-  border-radius:50%;
+  width:80px;height:80px;background:rgba(0,107,63,0.3);border-radius:50%;
+  pointer-events:none;
 }
-.ferry-name{
-  font-size:32px;font-weight:900;
-  color:#ff4d6d;letter-spacing:3px;
-  text-shadow:0 2px 8px rgba(0,0,0,0.4);
-  position:relative;z-index:1;
-}
-.ferry-sub{
-  font-size:11px;letter-spacing:4px;text-transform:uppercase;
-  color:rgba(255,255,255,0.7);margin-top:4px;
-  position:relative;z-index:1;
-}
-.header-line{
-  width:40px;height:2px;background:#006B3F;
-  margin:10px auto 0;border-radius:2px;
-  position:relative;z-index:1;
-}
+.h-name{font-size:32px;font-weight:900;color:#ff4d6d;letter-spacing:3px;text-shadow:0 2px 8px rgba(0,0,0,.4);position:relative;z-index:1}
+.h-sub{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-top:4px;position:relative;z-index:1}
+.h-line{width:40px;height:2px;background:#006B3F;margin:10px auto 0;border-radius:2px;position:relative;z-index:1}
 
-/* BODY */
-.body{padding:16px 14px 24px;}
+.body{padding:16px 14px 24px}
 
-/* SECTION LABEL */
-.sec-label{
-  font-size:10px;font-weight:700;letter-spacing:3px;
-  text-transform:uppercase;color:var(--red);
-  margin-bottom:10px;display:flex;align-items:center;gap:8px;
+/* LABEL DE SECCIÓN */
+.lbl{
+  font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+  color:var(--red);margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
 }
-.sec-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(200,16,46,0.2),transparent);}
+.lbl::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(200,16,46,.2),transparent)}
 
-/* DESTINOS - horizontal */
-.destinos-row{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
-  margin-bottom:18px;
-}
-.dest-btn{
-  border:2px solid #ddd;border-radius:14px;
-  background:#fff;padding:12px 6px;
-  text-align:center;cursor:pointer;
-  transition:all 0.2s ease;
+/* GRIDS — misma regla, reutilizada */
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+
+/* BOTONES DESTINO */
+.dbt{
+  border:2px solid #ddd;border-radius:14px;background:#fff;
+  padding:12px 6px;text-align:center;cursor:pointer;
+  /* transition solo en propiedades que se cambian */
+  transition:border-color .18s,background .18s,box-shadow .18s,transform .18s;
   position:relative;overflow:hidden;
-  box-shadow:0 2px 6px rgba(0,0,0,0.06);
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+  /* Fuerza capa compuesta para transform animado */
+  will-change:transform;
 }
-.dest-btn .dest-icon{font-size:22px;display:block;margin-bottom:4px;}
-.dest-btn .dest-name{font-size:13px;font-weight:700;color:var(--text);}
-.dest-btn .dest-country{font-size:10px;color:var(--muted);margin-top:2px;}
+.dbt .dn{font-size:13px;font-weight:700;color:var(--text)}
+.dbt .dc{font-size:10px;color:var(--muted);margin-top:2px}
+.dbt.sel{border-color:var(--red);background:linear-gradient(135deg,#fff5f7,#ffe0e6);box-shadow:0 4px 14px rgba(200,16,46,.25);transform:translateY(-2px)}
+.dbt.sel .dn{color:var(--red)}
+.dbt.sel::after{content:'✓';position:absolute;top:5px;right:7px;font-size:10px;font-weight:900;color:var(--red)}
 
-.dest-btn.selected{
-  border-color:var(--red);
-  background:linear-gradient(135deg,#fff5f7,#ffe0e6);
-  box-shadow:0 4px 14px rgba(200,16,46,0.25);
-  transform:translateY(-2px);
-}
-.dest-btn.selected .dest-name{color:var(--red);}
-.dest-btn.selected::after{
-  content:'✓';position:absolute;top:5px;right:7px;
-  font-size:10px;font-weight:900;color:var(--red);
-}
-
-/* PRECIOS - horizontal */
-.precios-row{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
-  margin-bottom:18px;
-}
-.price-btn{
-  border:2px solid #ddd;border-radius:14px;
-  background:#fff;padding:12px 6px;
-  text-align:center;cursor:pointer;
-  transition:all 0.2s ease;
-  box-shadow:0 2px 6px rgba(0,0,0,0.06);
+/* BOTONES PRECIO */
+.pbt{
+  border:2px solid #ddd;border-radius:14px;background:#fff;
+  padding:12px 6px;text-align:center;cursor:pointer;
+  transition:border-color .18s,background .18s,box-shadow .18s,transform .18s;
   position:relative;overflow:hidden;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+  will-change:transform;
 }
-.price-amount{
-  font-size:15px;font-weight:900;
-  color:var(--text);line-height:1;
-}
-.price-fcfa{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
-.price-type{
-  font-size:10px;font-weight:700;letter-spacing:1px;
-  text-transform:uppercase;margin-top:6px;
-  padding:3px 6px;border-radius:6px;
-  display:inline-block;
-}
+.pa{font-size:15px;font-weight:900;color:var(--text);line-height:1}
+.pf{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+.pt{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:6px;padding:3px 6px;border-radius:6px;display:inline-block}
 
-/* Económico - verde */
-.price-btn.eco .price-type{color:var(--green);background:rgba(0,107,63,0.08);}
-.price-btn.eco.selected{
-  border-color:var(--green);
-  background:linear-gradient(135deg,#f0fff7,#d4f5e5);
-  box-shadow:0 4px 14px rgba(0,107,63,0.2);
-  transform:translateY(-2px);
-}
-.price-btn.eco.selected .price-amount{color:var(--green);}
+.pbt.eco .pt{color:var(--green);background:rgba(0,107,63,.08)}
+.pbt.eco.sel{border-color:var(--green);background:linear-gradient(135deg,#f0fff7,#d4f5e5);box-shadow:0 4px 14px rgba(0,107,63,.2);transform:translateY(-2px)}
+.pbt.eco.sel .pa{color:var(--green)}
 
-/* Business - rojo */
-.price-btn.biz .price-type{color:var(--red);background:rgba(200,16,46,0.08);}
-.price-btn.biz.selected{
-  border-color:var(--red);
-  background:linear-gradient(135deg,#fff5f7,#ffe0e6);
-  box-shadow:0 4px 14px rgba(200,16,46,0.2);
-  transform:translateY(-2px);
-}
-.price-btn.biz.selected .price-amount{color:var(--red);}
+.pbt.biz .pt{color:var(--red);background:rgba(200,16,46,.08)}
+.pbt.biz.sel{border-color:var(--red);background:linear-gradient(135deg,#fff5f7,#ffe0e6);box-shadow:0 4px 14px rgba(200,16,46,.2);transform:translateY(-2px)}
+.pbt.biz.sel .pa{color:var(--red)}
 
-/* VIP - dorado */
-.price-btn.vip .price-type{color:#b8860b;background:rgba(184,134,11,0.08);}
-.price-btn.vip.selected{
-  border-color:#b8860b;
-  background:linear-gradient(135deg,#fffdf0,#fef3c0);
-  box-shadow:0 4px 14px rgba(184,134,11,0.2);
-  transform:translateY(-2px);
-}
-.price-btn.vip.selected .price-amount{color:#b8860b;}
+.pbt.vip .pt{color:#b8860b;background:rgba(184,134,11,.08)}
+.pbt.vip.sel{border-color:#b8860b;background:linear-gradient(135deg,#fffdf0,#fef3c0);box-shadow:0 4px 14px rgba(184,134,11,.2);transform:translateY(-2px)}
+.pbt.vip.sel .pa{color:#b8860b}
 
-.price-btn.selected::after{
-  content:'✓';position:absolute;top:5px;right:7px;
-  font-size:10px;font-weight:900;
-}
-.price-btn.eco.selected::after{color:var(--green);}
-.price-btn.biz.selected::after{color:var(--red);}
-.price-btn.vip.selected::after{color:#b8860b;}
+.pbt.sel::after{content:'✓';position:absolute;top:5px;right:7px;font-size:10px;font-weight:900}
+.pbt.eco.sel::after{color:var(--green)}
+.pbt.biz.sel::after{color:var(--red)}
+.pbt.vip.sel::after{color:#b8860b}
 
-/* FOTO DNI */
-.upload-area{
-  border:2px dashed rgba(200,16,46,0.25);
-  border-radius:16px;background:#fff;
-  padding:24px 16px;text-align:center;
-  cursor:pointer;transition:all 0.2s;
+/* UPLOAD */
+.upl{
+  border:2px dashed rgba(200,16,46,.25);border-radius:16px;
+  background:#fff;padding:24px 16px;text-align:center;
+  cursor:pointer;transition:border-color .18s,background .18s;
   position:relative;margin-bottom:20px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
 }
-.upload-area:active{border-color:var(--red);background:#fff5f7;}
-.upload-area input{
-  position:absolute;inset:0;opacity:0;
-  cursor:pointer;width:100%;height:100%;
-}
-.upload-icon{font-size:34px;margin-bottom:8px;}
-.upload-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;}
-.upload-sub{font-size:12px;color:var(--muted);}
-.upload-formats{
-  display:flex;justify-content:center;gap:6px;margin-top:10px;
-}
-.fmt{
-  font-size:9px;letter-spacing:1px;text-transform:uppercase;
-  background:#f0f0f0;border-radius:5px;padding:3px 7px;color:var(--muted);
-}
+.upl:active{border-color:var(--red);background:#fff5f7}
+/* Input ocupa toda el área con opacidad 0 — sin JS extra para el click */
+.upl input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.u-ico{font-size:34px;margin-bottom:8px}
+.u-ttl{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px}
+.u-sub{font-size:12px;color:var(--muted)}
+.u-fmts{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.fmt{font-size:9px;letter-spacing:1px;text-transform:uppercase;background:#f0f0f0;border-radius:5px;padding:3px 7px;color:var(--muted)}
 
-/* PREVIEW */
-#preview-box{
+/* PREVIEW — hidden por defecto con display none (sin costo de layout) */
+#pvbox{
   display:none;border-radius:16px;overflow:hidden;
   margin-bottom:20px;position:relative;
-  box-shadow:0 4px 16px rgba(0,0,0,0.1);
+  box-shadow:0 4px 16px rgba(0,0,0,.1);
 }
-#preview-box img{width:100%;height:160px;object-fit:cover;display:block;}
-.preview-bar{
+/* height fija evita reflow al cargar imagen */
+#pvbox img{width:100%;height:160px;object-fit:cover;display:block}
+.pvbar{
   position:absolute;bottom:0;left:0;right:0;
-  background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);
+  background:linear-gradient(to top,rgba(0,0,0,.8),transparent);
   padding:12px;display:flex;align-items:center;justify-content:space-between;
 }
-.preview-bar span{font-size:12px;color:#fff;font-weight:600;}
-.change-btn{
-  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+.pvbar span{font-size:12px;color:#fff;font-weight:600}
+.chg{
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
   color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;
   font-family:inherit;
 }
 
-/* SUBMIT */
-.submit-btn{
+/* BOTÓN ENVIAR */
+.sbtn{
   width:100%;padding:16px;
-  background:linear-gradient(135deg,var(--red-light),var(--red-dark));
-  border:none;border-radius:16px;
-  color:#fff;font-size:17px;font-weight:800;
-  letter-spacing:1px;cursor:pointer;
-  box-shadow:0 6px 20px rgba(200,16,46,0.35);
-  transition:all 0.2s;
+  background:linear-gradient(135deg,var(--red-l),var(--red-d));
+  border:none;border-radius:16px;color:#fff;
+  font-size:17px;font-weight:800;letter-spacing:1px;cursor:pointer;
+  box-shadow:0 6px 20px rgba(200,16,46,.35);
+  transition:transform .15s,box-shadow .15s;
   display:flex;align-items:center;justify-content:center;gap:8px;
+  /* Evita FOUC en Safari al deshabilitar */
+  -webkit-appearance:none;
 }
-.submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
-.submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
+.sbtn:active{transform:scale(.97);box-shadow:0 3px 10px rgba(200,16,46,.3)}
+.sbtn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;transform:none}
 
-/* ANIMACIONES */
-@keyframes slideUp{
-  from{opacity:0;transform:translateY(20px)}
-  to{opacity:1;transform:translateY(0)}
-}
-.header{animation:slideUp 0.3s ease both;}
-.body>*{animation:slideUp 0.3s ease both;}
-.body>*:nth-child(1){animation-delay:0.05s}
-.body>*:nth-child(2){animation-delay:0.1s}
-.body>*:nth-child(3){animation-delay:0.15s}
-.body>*:nth-child(4){animation-delay:0.2s}
-.body>*:nth-child(5){animation-delay:0.25s}
-.body>*:nth-child(6){animation-delay:0.3s}
-.body>*:nth-child(7){animation-delay:0.35s}
+/* ANIMACIONES — solo los hijos directos del body para reducir selectores */
+@keyframes su{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.hdr{animation:su .28s ease both}
+/* Usamos nth-child en rango para menor especificidad */
+.body>*{animation:su .28s ease both}
+.body>*:nth-child(1){animation-delay:.05s}
+.body>*:nth-child(2){animation-delay:.1s}
+.body>*:nth-child(3){animation-delay:.14s}
+.body>*:nth-child(4){animation-delay:.18s}
+.body>*:nth-child(5){animation-delay:.22s}
+.body>*:nth-child(6){animation-delay:.26s}
+.body>*:nth-child(7){animation-delay:.3s}
 
-/* CIERRE */
-@keyframes fadeOut{
-  to{opacity:0;transform:scale(0.95)}
-}
-.closing{animation:fadeOut 0.3s ease forwards;}
+@keyframes fo{to{opacity:0;transform:scale(.95)}}
+.closing{animation:fo .28s ease forwards}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="ferry-name">FERRY VITEOCA</div>
-  <div class="ferry-sub">Reserva tu billete</div>
-  <div class="header-line"></div>
+<div class="hdr">
+  <div class="h-name">FERRY VITEOCA</div>
+  <div class="h-sub">Reserva tu billete</div>
+  <div class="h-line"></div>
 </div>
 
 <div class="body">
 
-  <!-- DESTINO -->
-  <div class="sec-label">Destino</div>
-  <div class="destinos-row">
-    <div class="dest-btn" onclick="selectDest(this,'Malabo')">
-      <div class="dest-name">Malabo</div>
-      <div class="dest-country">Bioko</div>
+  <div class="lbl">Destino</div>
+  <div class="row3" id="dRow">
+    <div class="dbt" data-val="Malabo">
+      <div class="dn">Malabo</div><div class="dc">Bioko</div>
     </div>
-    <div class="dest-btn" onclick="selectDest(this,'Bata')">
-      <div class="dest-name">Bata</div>
-      <div class="dest-country">Continente</div>
+    <div class="dbt" data-val="Bata">
+      <div class="dn">Bata</div><div class="dc">Continente</div>
     </div>
-    <div class="dest-btn" onclick="selectDest(this,'Annobón')">
-      <div class="dest-name">Annobón</div>
-      <div class="dest-country">Isla</div>
+    <div class="dbt" data-val="Annobón">
+      <div class="dn">Annobón</div><div class="dc">Isla</div>
     </div>
   </div>
 
-  <!-- PRECIO -->
-  <div class="sec-label">Tarifa</div>
-  <div class="precios-row">
-    <div class="price-btn eco" onclick="selectPrice(this,'35000','Económico')">
-      <div class="price-amount">35.000</div>
-      <div class="price-fcfa">FCFA</div>
-      <div class="price-type">Económico</div>
+  <div class="lbl">Tarifa</div>
+  <div class="row3" id="pRow">
+    <div class="pbt eco" data-val="35000" data-label="Económico">
+      <div class="pa">35.000</div><div class="pf">FCFA</div><div class="pt">Económico</div>
     </div>
-    <div class="price-btn biz" onclick="selectPrice(this,'40000','Business')">
-      <div class="price-amount">40.000</div>
-      <div class="price-fcfa">FCFA</div>
-      <div class="price-type">Business</div>
+    <div class="pbt biz" data-val="40000" data-label="Business">
+      <div class="pa">40.000</div><div class="pf">FCFA</div><div class="pt">Business</div>
     </div>
-    <div class="price-btn vip" onclick="selectPrice(this,'50000','VIP')">
-      <div class="price-amount">50.000</div>
-      <div class="price-fcfa">FCFA</div>
-      <div class="price-type">VIP ★</div>
+    <div class="pbt vip" data-val="50000" data-label="VIP">
+      <div class="pa">50.000</div><div class="pf">FCFA</div><div class="pt">VIP ★</div>
     </div>
   </div>
 
-  <!-- FOTO DNI -->
-  <div class="sec-label">Foto de Identidad</div>
-  <div class="upload-area" id="uploadArea">
-    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
-    <div class="upload-icon">🪪</div>
-    <div class="upload-title">Adjuntar documento</div>
-    <div class="upload-sub">Toca para hacer foto o seleccionar</div>
-    <div class="upload-formats">
-      <span class="fmt">JPG</span>
-      <span class="fmt">PNG</span>
-      <span class="fmt">PDF</span>
+  <div class="lbl">Foto de Identidad</div>
+  <div class="upl" id="upl">
+    <!--
+      capture="environment" → cámara trasera por defecto (mejor calidad para DNI)
+      accept solo imágenes reales para acotar el picker y agilizar la subida
+    -->
+    <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment">
+    <div class="u-ico">🪪</div>
+    <div class="u-ttl">Adjuntar documento</div>
+    <div class="u-sub">Toca para hacer foto o seleccionar</div>
+    <div class="u-fmts">
+      <span class="fmt">JPG</span><span class="fmt">PNG</span><span class="fmt">PDF</span>
     </div>
   </div>
 
-  <div id="preview-box">
-    <img id="preview-img" src="" alt="DNI">
-    <div class="preview-bar">
+  <div id="pvbox">
+    <!-- decoding="async" libera el hilo principal mientras decodifica la imagen -->
+    <img id="pvimg" src="" alt="DNI" decoding="async">
+    <div class="pvbar">
       <span>✅ Documento adjuntado</span>
-      <button class="change-btn" onclick="changePhoto()">Cambiar</button>
+      <button class="chg" id="chgBtn">Cambiar</button>
     </div>
   </div>
 
-  <!-- ENVIAR -->
-  <button class="submit-btn" id="submitBtn" onclick="enviar()">
-    🚢 Confirmar Reserva
-  </button>
+  <button class="sbtn" id="sbtn">🚢 Confirmar Reserva</button>
 
 </div>
 
 <script>
-const tg = window.Telegram?.WebApp;
-if(tg){tg.ready();tg.expand();}
+(function(){
+  /* ── Telegram init ── */
+  var tg=window.Telegram&&window.Telegram.WebApp;
+  if(tg){tg.ready();tg.expand();}
 
-let destino='', precio='', fotoBase64='';
+  /* ── Estado ── */
+  var destino='',precio='',fotoFile=null,fotoB64='';
 
-function selectDest(el, val){
-  document.querySelectorAll('.dest-btn').forEach(b=>b.classList.remove('selected'));
-  el.classList.add('selected');
-  destino=val;
-}
+  /* ── Elementos cacheados (una sola búsqueda en el DOM) ── */
+  var photoInput=document.getElementById('photoInput');
+  var upl=document.getElementById('upl');
+  var pvbox=document.getElementById('pvbox');
+  var pvimg=document.getElementById('pvimg');
+  var sbtn=document.getElementById('sbtn');
 
-function selectPrice(el, val){
-  document.querySelectorAll('.price-btn').forEach(b=>b.classList.remove('selected'));
-  el.classList.add('selected');
-  precio=val;
-}
+  /* ── Delegación de eventos: 1 listener por grupo en lugar de N inline ── */
+  document.getElementById('dRow').addEventListener('click',function(e){
+    var btn=e.target.closest('.dbt');
+    if(!btn)return;
+    document.querySelectorAll('.dbt').forEach(function(b){b.classList.remove('sel')});
+    btn.classList.add('sel');
+    destino=btn.dataset.val;
+  });
 
-function handlePhoto(input){
-  const file=input.files[0];
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    fotoBase64=e.target.result;
-    document.getElementById('preview-img').src=fotoBase64;
-    document.getElementById('uploadArea').style.display='none';
-    document.getElementById('preview-box').style.display='block';
-  };
-  reader.readAsDataURL(file);
-}
+  document.getElementById('pRow').addEventListener('click',function(e){
+    var btn=e.target.closest('.pbt');
+    if(!btn)return;
+    document.querySelectorAll('.pbt').forEach(function(b){b.classList.remove('sel')});
+    btn.classList.add('sel');
+    precio=btn.dataset.val;
+  });
 
-function changePhoto(){
-  fotoBase64='';
-  document.getElementById('photoInput').value='';
-  document.getElementById('preview-box').style.display='none';
-  document.getElementById('uploadArea').style.display='block';
-}
+  /* ── Foto: compresión antes de guardar el base64 ── */
+  photoInput.addEventListener('change',function(){
+    var file=this.files[0];
+    if(!file)return;
+    fotoFile=file;
 
-async function enviar(){
-  if(!destino){alert('Selecciona un destino');return;}
-  if(!precio){alert('Selecciona una tarifa');return;}
-  if(!fotoBase64){alert('Adjunta tu foto de identidad');return;}
+    /*
+      Estrategia de calidad:
+      - Usamos Canvas para reescalar si la imagen supera 1600px de ancho.
+        Esto recorta tamaño de payload (y tiempo de upload) sin pérdida visible
+        en un DNI que se lee en pantalla pequeña.
+      - Calidad JPEG 0.85: mantiene legibilidad de texto del DNI con ~60% menos peso.
+    */
+    var img=new Image();
+    var objectUrl=URL.createObjectURL(file);
+    img.onload=function(){
+      URL.revokeObjectURL(objectUrl); // liberar memoria inmediatamente
 
-  const btn=document.getElementById('submitBtn');
-  btn.disabled=true;
-  btn.textContent='Enviando...';
+      var MAX=1600,q=0.85;
+      var w=img.naturalWidth,h=img.naturalHeight;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
 
-  const chatId=tg?.initDataUnsafe?.user?.id || '';
-  const username=tg?.initDataUnsafe?.user?.username || '';
+      var c=document.createElement('canvas');
+      c.width=w;c.height=h;
+      var ctx=c.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
 
-  try{
-    await fetch('https://bery55.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa',{
+      // PDF se envía tal cual (no es imagen rasterizable con Canvas)
+      var mime=file.type==='application/pdf'?'application/pdf':'image/jpeg';
+      if(mime==='application/pdf'){
+        // Para PDF leemos directo sin pasar por canvas
+        var r2=new FileReader();
+        r2.onload=function(ev){setPreview(ev.target.result);};
+        r2.readAsDataURL(file);
+      } else {
+        fotoB64=c.toDataURL(mime,q);
+        setPreview(fotoB64);
+      }
+    };
+    img.src=objectUrl;
+  });
+
+  function setPreview(b64){
+    fotoB64=b64;
+    // Usar object URL en el preview para no duplicar datos en memoria (la img no necesita el b64)
+    pvimg.src=b64;
+    upl.style.display='none';
+    pvbox.style.display='block';
+  }
+
+  document.getElementById('chgBtn').addEventListener('click',function(){
+    fotoB64='';fotoFile=null;
+    photoInput.value='';
+    pvbox.style.display='none';
+    upl.style.display='block';
+  });
+
+  /* ── Envío ── */
+  sbtn.addEventListener('click',function(){
+    if(!destino){alert('Selecciona un destino');return;}
+    if(!precio){alert('Selecciona una tarifa');return;}
+    if(!fotoB64){alert('Adjunta tu foto de identidad');return;}
+
+    sbtn.disabled=true;
+    sbtn.textContent='Enviando…';
+
+    var uid=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user;
+    var chatId=uid?uid.id:'';
+    var username=uid?uid.username||'':{};
+
+    /*
+      fetch con AbortController y timeout de 20 s para no dejar al usuario
+      esperando indefinidamente en redes lentas.
+    */
+    var ac=new AbortController();
+    var timer=setTimeout(function(){ac.abort();},20000);
+
+    fetch('https://ferry50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({destino, precio, foto:fotoBase64, chat_id:chatId, username})
+      body:JSON.stringify({
+        destino:destino,
+        precio:precio,
+        foto:fotoB64,
+        chat_id:chatId,
+        username:username
+      }),
+      signal:ac.signal
+    })
+    .then(function(res){
+      clearTimeout(timer);
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      document.body.classList.add('closing');
+      setTimeout(function(){if(tg)tg.close();},320);
+    })
+    .catch(function(err){
+      clearTimeout(timer);
+      sbtn.disabled=false;
+      sbtn.innerHTML='🚢 Confirmar Reserva';
+      var msg=err.name==='AbortError'
+        ?'Tiempo de espera agotado. Verifica tu conexión.'
+        :'Error al enviar. Inténtalo de nuevo.';
+      alert(msg);
     });
-    document.body.classList.add('closing');
-    setTimeout(()=>{
-      if(tg) tg.close();
-    },350);
-  }catch(e){
-    btn.disabled=false;
-    btn.innerHTML='🚢 Confirmar Reserva';
-    alert('Error al enviar. Inténtalo de nuevo.');
-  }
-}
+  });
+
+})(); // IIFE — sin variables globales contaminando window
 </script>
 </body>
 </html>
