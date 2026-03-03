@@ -335,22 +335,46 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
     sbtn.disabled=true;
     sbtn.textContent='Enviando…';
 
-    var uid=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user;
-    var chatId=uid?String(uid.id):'';
-    var username=uid?(uid.username||uid.first_name||''):'';
+    // EXTRACCIÓN ROBUSTA chat_id — 3 fuentes de fallback
+    var chatId='', username='', firstName='', lastName='';
 
-    /*
-      SOLUCIÓN CORS + n8n:
-      - multipart/form-data en lugar de JSON → n8n lo recibe sin configuración extra
-      - NO se pone Content-Type manualmente (el browser lo pone con el boundary correcto)
-      - La foto se adjunta como Blob real, no como base64 string
-        → n8n recibe un campo "foto" como archivo binario, más pequeño y más rápido
-    */
-    var fd=new FormData();
-    fd.append('destino', destino);
-    fd.append('precio',  precio);
-    fd.append('chat_id', chatId);
-    fd.append('username',username);
+    // Fuente 1: initDataUnsafe.user (la más directa)
+    var unsafeUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if(unsafeUser && unsafeUser.id){
+      chatId    = String(unsafeUser.id);
+      username  = unsafeUser.username   || '';
+      firstName = unsafeUser.first_name || '';
+      lastName  = unsafeUser.last_name  || '';
+    }
+
+    // Fuente 2: parsear tg.initData (query string firmado por Telegram)
+    if(!chatId && tg && tg.initData && tg.initData.length > 0){
+      try {
+        var params  = new URLSearchParams(tg.initData);
+        var userStr = params.get('user');
+        if(userStr){
+          var parsed = JSON.parse(decodeURIComponent(userStr));
+          chatId    = String(parsed.id || '');
+          username  = parsed.username   || '';
+          firstName = parsed.first_name || '';
+          lastName  = parsed.last_name  || '';
+        }
+      } catch(e){}
+    }
+
+    // Fuente 3: initDataUnsafe.chat (canales/grupos)
+    if(!chatId && tg && tg.initDataUnsafe && tg.initDataUnsafe.chat){
+      chatId = String(tg.initDataUnsafe.chat.id || '');
+    }
+
+    var fd = new FormData();
+    fd.append('destino',    destino);
+    fd.append('precio',     precio);
+    fd.append('chat_id',    chatId);
+    fd.append('username',   username);
+    fd.append('first_name', firstName);
+    fd.append('last_name',  lastName);
+    fd.append('initData',   (tg && tg.initData) || '');
 
     // Convertir base64 a Blob para enviar como archivo real
     var b64data=fotoB64.split(',')[1];
