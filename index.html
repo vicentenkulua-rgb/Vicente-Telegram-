@@ -59,6 +59,22 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--red-light),var(--red-dark));border:none;border-radius:16px;color:#fff;font-size:17px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(200,16,46,0.35);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
 .submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
+
+/* ── PROGRESS BAR ── */
+#progress-wrap{display:none;margin-bottom:16px;border-radius:12px;background:#fff;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
+#progress-label{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+#progress-label span{font-size:11px;color:var(--muted);font-weight:500;}
+#progress-track{width:100%;height:8px;background:#f0f0f0;border-radius:99px;overflow:hidden;}
+#progress-bar{height:100%;width:0%;background:linear-gradient(to right,var(--red-light),var(--red-dark));border-radius:99px;transition:width 0.3s ease;}
+#progress-status{font-size:11px;color:var(--muted);margin-top:6px;text-align:center;}
+
+/* ── COMPRESSING OVERLAY ── */
+#compress-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+#compress-overlay.visible{display:flex;}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.compress-label{font-size:13px;color:#fff;font-weight:600;letter-spacing:1px;}
+
 @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 .header{animation:slideUp 0.3s ease both;}
 .body>*{animation:slideUp 0.3s ease both;}
@@ -74,6 +90,12 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 </style>
 </head>
 <body>
+
+<!-- Overlay compresión -->
+<div id="compress-overlay">
+  <div class="spinner"></div>
+  <div class="compress-label">Optimizando imagen…</div>
+</div>
 
 <div class="header">
   <div class="ferry-name">FERRY VITEOCA</div>
@@ -142,6 +164,13 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
     </div>
   </div>
 
+  <!-- BARRA DE PROGRESO -->
+  <div id="progress-wrap">
+    <div id="progress-label">Enviando reserva… <span id="progress-pct">0%</span></div>
+    <div id="progress-track"><div id="progress-bar"></div></div>
+    <div id="progress-status">Preparando datos…</div>
+  </div>
+
   <!-- ENVIAR -->
   <button class="submit-btn" id="submitBtn" onclick="enviar()">
     🚢 Confirmar Reserva
@@ -153,7 +182,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 
-let destino='', precio='', fotoBase64='';
+let destino='', precio='', precioLabel='', fotoBlob=null;
 
 function selectDest(el, val){
   document.querySelectorAll('.dest-btn').forEach(b=>b.classList.remove('selected'));
@@ -161,58 +190,207 @@ function selectDest(el, val){
   destino=val;
 }
 
-function selectPrice(el, val){
+function selectPrice(el, val, label){
   document.querySelectorAll('.price-btn').forEach(b=>b.classList.remove('selected'));
   el.classList.add('selected');
   precio=val;
+  precioLabel=label;
 }
 
-function handlePhoto(input){
+/* ─── COMPRESIÓN DE IMAGEN CON CANVAS ─── */
+function compressImage(file, maxW=1200, maxH=1200, quality=0.82){
+  return new Promise((resolve, reject)=>{
+    const overlay=document.getElementById('compress-overlay');
+    overlay.classList.add('visible');
+
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let w=img.width, h=img.height;
+
+      // Escalar manteniendo proporción
+      if(w>maxW||h>maxH){
+        const ratio=Math.min(maxW/w, maxH/h);
+        w=Math.round(w*ratio);
+        h=Math.round(h*ratio);
+      }
+
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+
+      canvas.toBlob(blob=>{
+        overlay.classList.remove('visible');
+        if(blob) resolve(blob);
+        else reject(new Error('No se pudo comprimir la imagen'));
+      },'image/jpeg', quality);
+    };
+    img.onerror=()=>{
+      URL.revokeObjectURL(url);
+      overlay.classList.remove('visible');
+      reject(new Error('No se pudo leer la imagen'));
+    };
+    img.src=url;
+  });
+}
+
+async function handlePhoto(input){
   const file=input.files[0];
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    fotoBase64=e.target.result;
-    document.getElementById('preview-img').src=fotoBase64;
+  if(!file) return;
+
+  try{
+    // Solo comprimir si es imagen (PDF se envía tal cual)
+    if(file.type.startsWith('image/')){
+      fotoBlob=await compressImage(file);
+    } else {
+      fotoBlob=file;
+    }
+
+    // Preview con la imagen comprimida
+    const previewUrl=URL.createObjectURL(fotoBlob);
+    document.getElementById('preview-img').src=previewUrl;
     document.getElementById('uploadArea').style.display='none';
     document.getElementById('preview-box').style.display='block';
-  };
-  reader.readAsDataURL(file);
+
+  }catch(err){
+    alert('Error al procesar la imagen. Inténtalo de nuevo.');
+    console.error(err);
+  }
 }
 
 function changePhoto(){
-  fotoBase64='';
+  fotoBlob=null;
   document.getElementById('photoInput').value='';
   document.getElementById('preview-box').style.display='none';
   document.getElementById('uploadArea').style.display='block';
 }
 
+/* ─── PROGRESO VISUAL ─── */
+function setProgress(pct, status){
+  document.getElementById('progress-bar').style.width=pct+'%';
+  document.getElementById('progress-pct').textContent=pct+'%';
+  if(status) document.getElementById('progress-status').textContent=status;
+}
+
+/* ─── ENVÍO CON XMLHttpRequest ───
+   TIMEOUTS separados:
+   · UPLOAD_TIMEOUT  (45s): tiempo máximo para subir el archivo al servidor
+   · RESPONSE_TIMEOUT (90s): tiempo adicional para que n8n procese y responda
+   Así el 100% de barra no mata la conexión mientras n8n trabaja.
+─── */
+function uploadWithProgress(formData){
+  return new Promise((resolve, reject)=>{
+    const xhr=new XMLHttpRequest();
+    const UPLOAD_TIMEOUT_MS  = 45000; // 45s para subir
+    const RESPONSE_TIMEOUT_MS= 90000; // 90s para que el servidor responda tras subir
+    let uploadTimer=null;
+    let responseTimer=null;
+    let uploadComplete=false;
+
+    // Timer de subida: arranca al hacer .send()
+    uploadTimer=setTimeout(()=>{
+      if(!uploadComplete){
+        xhr.abort();
+        reject(new Error('TIMEOUT_UPLOAD'));
+      }
+    }, UPLOAD_TIMEOUT_MS);
+
+    xhr.upload.addEventListener('progress', e=>{
+      if(e.lengthComputable){
+        const pct=Math.round((e.loaded/e.total)*100);
+        setProgress(pct, pct<100 ? `Subiendo imagen… ${pct}%` : 'Imagen enviada. Confirmando reserva…');
+      }
+    });
+
+    // Cuando termina la subida: cancelar timer de subida, arrancar timer de respuesta
+    xhr.upload.addEventListener('load', ()=>{
+      uploadComplete=true;
+      clearTimeout(uploadTimer);
+      setProgress(100,'Imagen enviada. Confirmando reserva…');
+      // Ahora esperamos la respuesta HTTP del servidor (n8n puede tardar)
+      responseTimer=setTimeout(()=>{
+        xhr.abort();
+        reject(new Error('TIMEOUT_RESPONSE'));
+      }, RESPONSE_TIMEOUT_MS);
+    });
+
+    xhr.addEventListener('load', ()=>{
+      clearTimeout(responseTimer);
+      // n8n puede responder 200 o incluso 0 en webhooks sin return — tratamos ambos como éxito
+      if(xhr.status===0 || (xhr.status>=200 && xhr.status<300)){
+        setProgress(100,'¡Reserva confirmada! ✅');
+        resolve(xhr.responseText);
+      } else {
+        reject(new Error('HTTP '+xhr.status));
+      }
+    });
+
+    xhr.addEventListener('error', ()=>{
+      clearTimeout(uploadTimer);
+      clearTimeout(responseTimer);
+      reject(new Error('ERROR_RED'));
+    });
+
+    xhr.addEventListener('abort', ()=>{
+      // El rechazo ya fue emitido por el timer que llamó a abort()
+    });
+
+    xhr.open('POST','https://ferry50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa');
+    xhr.send(formData);
+  });
+}
+
 async function enviar(){
   if(!destino){alert('Selecciona un destino');return;}
   if(!precio){alert('Selecciona una tarifa');return;}
-  if(!fotoBase64){alert('Adjunta tu foto de identidad');return;}
+  if(!fotoBlob){alert('Adjunta tu foto de identidad');return;}
 
   const btn=document.getElementById('submitBtn');
-  btn.disabled=true;
-  btn.textContent='Enviando...';
+  const progressWrap=document.getElementById('progress-wrap');
 
-  const chatId=tg?.initDataUnsafe?.user?.id || '';
-  const username=tg?.initDataUnsafe?.user?.username || '';
+  btn.disabled=true;
+  btn.textContent='Enviando…';
+  progressWrap.style.display='block';
+  setProgress(0,'Preparando datos…');
+
+  const chatId=tg?.initDataUnsafe?.user?.id||'';
+  const username=tg?.initDataUnsafe?.user?.username||'';
+
+  // FormData con binario — mucho más eficiente que Base64 en JSON
+  const formData=new FormData();
+  formData.append('destino', destino);
+  formData.append('precio', precio);
+  formData.append('precio_label', precioLabel);
+  formData.append('chat_id', chatId);
+  formData.append('username', username);
+  formData.append('foto', fotoBlob, 'documento.jpg');
 
   try{
-    await fetch('https://ferry50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({destino, precio, foto:fotoBase64, chat_id:chatId, username})
-    });
-    document.body.classList.add('closing');
+    await uploadWithProgress(formData);
+
+    // Pequeña pausa para que el usuario vea el 100%
     setTimeout(()=>{
-      if(tg) tg.close();
-    },350);
-  }catch(e){
+      document.body.classList.add('closing');
+      setTimeout(()=>{ if(tg) tg.close(); }, 350);
+    }, 600);
+
+  }catch(err){
+    progressWrap.style.display='none';
     btn.disabled=false;
     btn.innerHTML='🚢 Confirmar Reserva';
-    alert('Error al enviar. Inténtalo de nuevo.');
+
+    if(err.message==='TIMEOUT_UPLOAD'){
+      alert('La imagen tardó demasiado en subirse. Comprueba tu conexión e inténtalo de nuevo.');
+    } else if(err.message==='TIMEOUT_RESPONSE'){
+      alert('La imagen se subió pero el servidor tardó en confirmar. Espera unos segundos y comprueba si recibiste la reserva antes de reintentar.');
+    } else if(err.message==='ERROR_RED'){
+      alert('Sin conexión a internet. Comprueba tu red e inténtalo de nuevo.');
+    } else {
+      alert('Error al enviar ('+err.message+'). Inténtalo de nuevo.');
+    }
+    console.error(err);
   }
 }
 </script>
