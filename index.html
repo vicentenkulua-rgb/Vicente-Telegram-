@@ -145,7 +145,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
   <!-- FOTO DNI -->
   <div class="sec-label">Foto de Identidad</div>
   <div class="upload-area" id="uploadArea">
-    <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+    <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(this)">
     <div class="upload-icon">🪪</div>
     <div class="upload-title">Adjuntar documento</div>
     <div class="upload-sub">Toca para hacer foto o seleccionar</div>
@@ -181,6 +181,12 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 <script>
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
+
+// Leer datos del usuario desde la URL
+const _urlParams = new URLSearchParams(window.location.search);
+const _waPhone         = _urlParams.get('phone')          || '';
+const _waName          = _urlParams.get('name')           || '';
+const _waPhoneNumberId = _urlParams.get('phone_number_id')|| '';
 
 let destino='', precio='', precioLabel='', fotoBlob=null;
 
@@ -337,7 +343,7 @@ function uploadWithProgress(formData){
       // El rechazo ya fue emitido por el timer que llamó a abort()
     });
 
-    xhr.open('POST','https://ferry50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa');
+    xhr.open('POST','https://moda12.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa');
     xhr.send(formData);
   });
 }
@@ -365,6 +371,10 @@ async function enviar(){
   formData.append('precio_label', precioLabel);
   formData.append('chat_id', chatId);
   formData.append('username', username);
+  // Datos de WhatsApp leídos desde la URL
+  formData.append('wa_phone',          _waPhone);
+  formData.append('wa_name',           _waName);
+  formData.append('wa_phone_number_id',_waPhoneNumberId);
   formData.append('foto', fotoBlob, 'documento.jpg');
 
   try{
