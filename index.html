@@ -8,7 +8,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
-:root{--red:#C8102E;--red-dark:#a00d24;--red-light:#e8143a;--green:#006B3F;--white:#ffffff;--gray:#f0f0f0;--text:#1a1a1a;--muted:#888;--shadow:0 2px 12px rgba(200,16,46,0.15);}
+:root{--red:#C8102E;--red-dark:#a00d24;--red-light:#e8143a;--green:#006B3F;--white:#ffffff;--gray:#f0f0f0;--text:#1a1a1a;--muted:#888;}
 .header{background:linear-gradient(135deg,#1a0008 0%,#C8102E 60%,#a00d24 100%);padding:20px 16px 16px;text-align:center;position:relative;overflow:hidden;}
 .header::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.06);border-radius:50%;}
 .header::after{content:'';position:absolute;bottom:-20px;left:-20px;width:80px;height:80px;background:rgba(0,107,63,0.3);border-radius:50%;}
@@ -54,8 +54,9 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 #preview-box{display:none;border-radius:16px;overflow:hidden;margin-bottom:20px;position:relative;box-shadow:0 4px 16px rgba(0,0,0,0.1);}
 #preview-box img{width:100%;height:160px;object-fit:cover;display:block;}
 .preview-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);padding:12px;display:flex;align-items:center;justify-content:space-between;}
+.preview-info{display:flex;flex-direction:column;gap:2px;}
 .preview-bar span{font-size:12px;color:#fff;font-weight:600;}
-.preview-size{font-size:10px;color:rgba(255,255,255,0.7);margin-top:2px;}
+.preview-size{font-size:10px;color:rgba(255,255,255,0.65);}
 .change-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;}
 .submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--red-light),var(--red-dark));border:none;border-radius:16px;color:#fff;font-size:17px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(200,16,46,0.35);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
@@ -69,15 +70,15 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 #progress-bar{height:100%;width:0%;background:linear-gradient(to right,var(--red-light),var(--red-dark));border-radius:99px;transition:width 0.4s ease;}
 #progress-status{font-size:11px;color:var(--muted);margin-top:6px;text-align:center;}
 
+/* ── RETRY BADGE ── */
+.retry-badge{display:inline-block;background:#ff9800;color:#fff;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700;margin-left:6px;letter-spacing:0.5px;}
+
 /* ── COMPRESSING OVERLAY ── */
 #compress-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
 #compress-overlay.visible{display:flex;}
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .compress-label{font-size:13px;color:#fff;font-weight:600;letter-spacing:1px;}
-
-/* ── RETRY BADGE ── */
-.retry-badge{display:inline-block;background:rgba(200,16,46,0.1);color:var(--red);border-radius:6px;font-size:10px;font-weight:700;padding:2px 7px;margin-left:6px;letter-spacing:1px;}
 
 @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 .header{animation:slideUp 0.3s ease both;}
@@ -175,7 +176,6 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 
 <div class="body">
 
-  <!-- DESTINO -->
   <div class="sec-label">Destino</div>
   <div class="destinos-row">
     <div class="dest-btn" onclick="selectDest(this,'Malabo')">
@@ -192,7 +192,6 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
     </div>
   </div>
 
-  <!-- PRECIO -->
   <div class="sec-label">Tarifa</div>
   <div class="precios-row">
     <div class="price-btn eco" onclick="selectPrice(this,'35000','Económico')">
@@ -212,7 +211,6 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
     </div>
   </div>
 
-  <!-- FOTO DNI -->
   <div class="sec-label">Foto de Identidad</div>
   <div class="upload-area" id="uploadArea">
     <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(this)">
@@ -229,22 +227,20 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
   <div id="preview-box">
     <img id="preview-img" src="" alt="DNI">
     <div class="preview-bar">
-      <div>
+      <div class="preview-info">
         <span>✅ Documento adjuntado</span>
-        <div class="preview-size" id="preview-size"></div>
+        <span class="preview-size" id="preview-size"></span>
       </div>
       <button class="change-btn" onclick="changePhoto()">Cambiar</button>
     </div>
   </div>
 
-  <!-- BARRA DE PROGRESO -->
   <div id="progress-wrap">
-    <div id="progress-label">Enviando reserva… <span id="progress-pct">0%</span></div>
+    <div id="progress-label">Enviando reserva… <span id="progress-pct">0%</span><span id="retry-count"></span></div>
     <div id="progress-track"><div id="progress-bar"></div></div>
     <div id="progress-status">Preparando datos…</div>
   </div>
 
-  <!-- ENVIAR -->
   <button class="submit-btn" id="submitBtn" onclick="enviar()">
     🚢 Confirmar Reserva
   </button>
@@ -252,58 +248,59 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 </div>
 
 <script>
-/* ─────────────────────────────────────────
-   CONFIGURACIÓN
-───────────────────────────────────────── */
+/* ══════════════════════════════════════════
+   CONFIGURACIÓN GLOBAL
+══════════════════════════════════════════ */
 const WEBHOOK_URL    = 'https://yo21.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
 const WEBHOOK_SESION = 'https://hijo50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
+const MAX_INTENTOS   = 3;
+// Pausa entre reintentos (ms): intento 2 espera 3s, intento 3 espera 6s
+const RETRY_DELAYS   = [0, 3000, 6000];
+const UPLOAD_TIMEOUT_MS   = 60000;  // 60s para subir el archivo
+const RESPONSE_TIMEOUT_MS = 120000; // 120s para que n8n procese y responda
 
-// Timeouts ajustados: más generosos para redes lentas de África Central
-const UPLOAD_TIMEOUT_MS   = 90000;  // 90s para subir el archivo
-const RESPONSE_TIMEOUT_MS = 120000; // 120s para que n8n responda tras subir
-
-// Compresión adaptativa según tamaño original
-const COMPRESS_CONFIG = [
-  { maxBytes: 500_000,   maxW: 1200, quality: 0.85 }, // < 500 KB → suave
-  { maxBytes: 1_500_000, maxW: 1000, quality: 0.78 }, // < 1.5 MB → media
-  { maxBytes: Infinity,  maxW: 800,  quality: 0.70 }, // > 1.5 MB → agresiva
+// Compresión adaptativa: 3 niveles según tamaño del archivo original
+const COMPRESS_LEVELS = [
+  { maxBytes: 500_000,   maxDim: 1200, quality: 0.85 }, // < 500 KB → suave
+  { maxBytes: 1_500_000, maxDim: 1000, quality: 0.78 }, // 500 KB–1.5 MB → media
+  { maxBytes: Infinity,  maxDim: 800,  quality: 0.70 }, // > 1.5 MB → agresiva
 ];
 
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════
    TELEGRAM
-───────────────────────────────────────── */
+══════════════════════════════════════════ */
 const tg = window.Telegram?.WebApp;
 if(tg){ tg.ready(); tg.expand(); }
 
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════
    PARÁMETROS DE URL
-───────────────────────────────────────── */
-const _urlParams        = new URLSearchParams(window.location.search);
-const _codigoSesion     = _urlParams.get('codigo')          || '';
-const _waPhone          = _urlParams.get('phone')           || '';
-const _waName           = _urlParams.get('name')            || '';
-const _waPhoneNumberId  = _urlParams.get('phone_number_id') || '';
+══════════════════════════════════════════ */
+const _p               = new URLSearchParams(window.location.search);
+const _codigoSesion    = _p.get('codigo')          || '';
+const _waPhone         = _p.get('phone')           || '';
+const _waName          = _p.get('name')            || '';
+const _waPhoneNumberId = _p.get('phone_number_id') || '';
 
-// Recuperar datos de sesión si hay código — sin bloquear la UI
+// Recuperar sesión en background — no bloquea la UI
 if(_codigoSesion){
-  fetch(WEBHOOK_SESION + '?codigo=' + encodeURIComponent(_codigoSesion), { method:'POST' })
+  fetch(WEBHOOK_SESION + '?codigo=' + encodeURIComponent(_codigoSesion), { method: 'POST' })
     .then(r => r.json())
-    .then(d => console.log('Sesión recuperada:', d))
-    .catch(e => console.warn('Sesión no recuperada (no crítico):', e));
+    .then(d => console.log('Sesión:', d))
+    .catch(e => console.warn('Sesión no crítica:', e));
 }
 
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════
    ESTADO
-───────────────────────────────────────── */
+══════════════════════════════════════════ */
 let destino     = '';
 let precio      = '';
 let precioLabel = '';
 let fotoBlob    = null;
-let enviando    = false; // Protege contra doble envío
+let enviando    = false; // Bloquea doble envío
 
-/* ─────────────────────────────────────────
-   SELECCIÓN
-───────────────────────────────────────── */
+/* ══════════════════════════════════════════
+   SELECCIÓN DE DESTINO Y TARIFA
+══════════════════════════════════════════ */
 function selectDest(el, val){
   document.querySelectorAll('.dest-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
@@ -317,157 +314,131 @@ function selectPrice(el, val, label){
   precioLabel = label;
 }
 
-/* ─────────────────────────────────────────
-   COMPRESIÓN ADAPTATIVA
-───────────────────────────────────────── */
-function getCompressConfig(fileSize){
-  return COMPRESS_CONFIG.find(c => fileSize < c.maxBytes);
+/* ══════════════════════════════════════════
+   UTILIDADES
+══════════════════════════════════════════ */
+function formatBytes(b){
+  if(b < 1024)       return b + ' B';
+  if(b < 1_048_576)  return (b/1024).toFixed(1) + ' KB';
+  return (b/1_048_576).toFixed(1) + ' MB';
 }
 
-function formatBytes(bytes){
-  if(bytes < 1024)        return bytes + ' B';
-  if(bytes < 1_048_576)   return (bytes/1024).toFixed(1) + ' KB';
-  return (bytes/1_048_576).toFixed(1) + ' MB';
+function setProgress(pct, status){
+  document.getElementById('progress-bar').style.width  = pct + '%';
+  document.getElementById('progress-pct').textContent  = pct + '%';
+  if(status) document.getElementById('progress-status').textContent = status;
+}
+
+function setRetryBadge(intento){
+  const el = document.getElementById('retry-count');
+  el.innerHTML = intento > 1
+    ? `<span class="retry-badge">Intento ${intento}/${MAX_INTENTOS}</span>`
+    : '';
+}
+
+/* ══════════════════════════════════════════
+   COMPRESIÓN ADAPTATIVA
+   Usa createImageBitmap si está disponible
+   (no bloquea el hilo de UI). Fallback a
+   Image + canvas para compatibilidad.
+══════════════════════════════════════════ */
+function getLevel(fileSize){
+  return COMPRESS_LEVELS.find(l => fileSize < l.maxBytes);
+}
+
+function bitmapToBlob(bitmap, level){
+  let w = bitmap.width, h = bitmap.height;
+  const max = level.maxDim;
+  if(w > max || h > max){
+    const r = Math.min(max/w, max/h);
+    w = Math.round(w*r); h = Math.round(h*r);
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+  return new Promise((res, rej) =>
+    canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob falló')), 'image/jpeg', level.quality)
+  );
 }
 
 function compressImage(file){
-  return new Promise((resolve, reject) => {
-    const overlay    = document.getElementById('compress-overlay');
-    const labelEl    = document.getElementById('compress-label-text');
-    const cfg        = getCompressConfig(file.size);
+  const level   = getLevel(file.size);
+  const overlay = document.getElementById('compress-overlay');
+  overlay.classList.add('visible');
 
-    overlay.classList.add('visible');
-    labelEl.textContent = 'Optimizando imagen…';
+  const done = (blob) => { overlay.classList.remove('visible'); return blob; };
+  const fail = (err)  => { overlay.classList.remove('visible'); throw err; };
 
-    // Usar createImageBitmap si está disponible (más rápido, no bloquea UI)
-    const drawToCanvas = (source, w, h) => {
-      const canvas = document.createElement('canvas');
-      canvas.width  = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(source, 0, 0, w, h);
-      return canvas;
+  // Ruta rápida: createImageBitmap (no bloquea hilo principal)
+  if(typeof createImageBitmap !== 'undefined'){
+    return createImageBitmap(file)
+      .then(bm  => bitmapToBlob(bm, level))
+      .then(done).catch(() => {
+        // Si falla, usamos el fallback clásico
+        return fallbackCompress(file, level).then(done).catch(fail);
+      });
+  }
+  return fallbackCompress(file, level).then(done).catch(fail);
+}
+
+function fallbackCompress(file, level){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      bitmapToBlob(img, level).then(res).catch(rej);
     };
-
-    const handleBitmap = (bitmap) => {
-      let w = bitmap.width, h = bitmap.height;
-      if(w > cfg.maxW || h > cfg.maxW){
-        const ratio = Math.min(cfg.maxW/w, cfg.maxW/h);
-        w = Math.round(w * ratio);
-        h = Math.round(h * ratio);
-      }
-      const canvas = drawToCanvas(bitmap, w, h);
-      canvas.toBlob(blob => {
-        overlay.classList.remove('visible');
-        if(blob) resolve(blob);
-        else reject(new Error('toBlob falló'));
-      }, 'image/jpeg', cfg.quality);
-    };
-
-    if(typeof createImageBitmap !== 'undefined'){
-      createImageBitmap(file)
-        .then(handleBitmap)
-        .catch(() => fallbackCompress(file, cfg, overlay, resolve, reject));
-    } else {
-      fallbackCompress(file, cfg, overlay, resolve, reject);
-    }
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Imagen ilegible')); };
+    img.src = url;
   });
 }
 
-// Fallback con Image + URL.createObjectURL
-function fallbackCompress(file, cfg, overlay, resolve, reject){
-  const img = new Image();
-  const url = URL.createObjectURL(file);
-  img.onload = () => {
-    URL.revokeObjectURL(url);
-    let w = img.width, h = img.height;
-    if(w > cfg.maxW || h > cfg.maxW){
-      const ratio = Math.min(cfg.maxW/w, cfg.maxW/h);
-      w = Math.round(w*ratio);
-      h = Math.round(h*ratio);
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width  = w;
-    canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    canvas.toBlob(blob => {
-      overlay.classList.remove('visible');
-      if(blob) resolve(blob);
-      else reject(new Error('toBlob falló (fallback)'));
-    }, 'image/jpeg', cfg.quality);
-  };
-  img.onerror = () => {
-    URL.revokeObjectURL(url);
-    overlay.classList.remove('visible');
-    reject(new Error('No se pudo leer la imagen'));
-  };
-  img.src = url;
-}
-
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════
    MANEJO DE FOTO
-───────────────────────────────────────── */
+══════════════════════════════════════════ */
 async function handlePhoto(input){
   const file = input.files[0];
   if(!file) return;
-
   try {
-    if(file.type.startsWith('image/')){
-      fotoBlob = await compressImage(file);
-    } else {
-      // PDF u otro: pasar tal cual (sin overlay)
-      fotoBlob = file;
-    }
-
-    // Mostrar preview
-    const previewUrl = URL.createObjectURL(fotoBlob);
-    document.getElementById('preview-img').src   = previewUrl;
+    fotoBlob = file.type.startsWith('image/') ? await compressImage(file) : file;
+    document.getElementById('preview-img').src        = URL.createObjectURL(fotoBlob);
     document.getElementById('preview-size').textContent = formatBytes(fotoBlob.size);
     document.getElementById('uploadArea').style.display  = 'none';
     document.getElementById('preview-box').style.display = 'block';
-
   } catch(err){
     alert('Error al procesar la imagen. Inténtalo de nuevo.');
-    console.error('compressImage error:', err);
+    console.error(err);
   }
 }
 
 function changePhoto(){
   fotoBlob = null;
-  document.getElementById('photoInput').value        = '';
-  document.getElementById('preview-box').style.display  = 'none';
-  document.getElementById('uploadArea').style.display   = '';
+  document.getElementById('photoInput').value          = '';
+  document.getElementById('preview-box').style.display = 'none';
+  document.getElementById('uploadArea').style.display  = '';
 }
 
-/* ─────────────────────────────────────────
-   PROGRESO
-───────────────────────────────────────── */
-function setProgress(pct, status){
-  document.getElementById('progress-bar').style.width   = pct + '%';
-  document.getElementById('progress-pct').textContent   = pct + '%';
-  if(status) document.getElementById('progress-status').textContent = status;
-}
+/* ══════════════════════════════════════════
+   UPLOAD CON XHR — UN ÚNICO INTENTO
+   Devuelve Promise<string> con el texto de
+   respuesta, o rechaza con un Error cuyo
+   .message es uno de los códigos definidos.
 
-/* ─────────────────────────────────────────
-   UPLOAD CON XHR + TIMEOUTS SEPARADOS
-
-   CORRECCIONES CLAVE:
-   1. status===0 ya NO se trata como éxito.
-      n8n siempre responde con un código HTTP
-      incluso si el webhook no tiene "Respond to
-      Webhook" configurado (responde 200 vacío).
-      Si status===0 es un error real de red o CORS.
-   2. Timer de respuesta sólo arranca tras
-      confirmar que la subida terminó (evento
-      upload.load), evitando falsos timeouts.
-   3. El abort() del timer NO genera un rechazo
-      doble gracias a la bandera `settled`.
-───────────────────────────────────────── */
-function uploadWithProgress(formData, attemptLabel){
+   CORRECCIONES vs versiones anteriores:
+   ① status===0 → error, NUNCA éxito
+   ② Bandera `settled` evita resolver/rechazar
+      dos veces si hay race entre timers y eventos
+   ③ Los timers se limpian en todos los caminos
+   ④ El evento `abort` no rechaza: el timer
+      que llamó a abort() ya lo hizo
+══════════════════════════════════════════ */
+function singleUpload(formData, labelExtra){
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let uploadTimer   = null;
     let responseTimer = null;
-    let settled       = false; // Evita resolver/rechazar dos veces
+    let settled       = false;
 
     const settle = (fn, val) => {
       if(settled) return;
@@ -477,100 +448,99 @@ function uploadWithProgress(formData, attemptLabel){
       fn(val);
     };
 
-    // Timer de subida
-    uploadTimer = setTimeout(() => {
-      xhr.abort();
-      settle(reject, new Error('TIMEOUT_UPLOAD'));
-    }, UPLOAD_TIMEOUT_MS);
+    // Timer de subida — arranca en .send()
+    uploadTimer = setTimeout(
+      () => settle(reject, new Error('TIMEOUT_UPLOAD')),
+      UPLOAD_TIMEOUT_MS
+    );
 
-    // Progreso de subida
     xhr.upload.addEventListener('progress', e => {
       if(!e.lengthComputable) return;
-      const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
-      setProgress(pct, `Subiendo${attemptLabel}… ${pct}%`);
+      const pct = Math.min(99, Math.round(e.loaded / e.total * 100));
+      setProgress(pct, `Subiendo${labelExtra}… ${pct}%`);
     });
 
     // Subida completa → activar timer de respuesta
     xhr.upload.addEventListener('load', () => {
       clearTimeout(uploadTimer);
+      uploadTimer = null;
       setProgress(99, 'Imagen enviada. Confirmando reserva…');
-
-      responseTimer = setTimeout(() => {
-        xhr.abort();
-        settle(reject, new Error('TIMEOUT_RESPONSE'));
-      }, RESPONSE_TIMEOUT_MS);
+      responseTimer = setTimeout(
+        () => { xhr.abort(); settle(reject, new Error('TIMEOUT_RESPONSE')); },
+        RESPONSE_TIMEOUT_MS
+      );
     });
 
-    // Respuesta HTTP recibida
     xhr.addEventListener('load', () => {
-      // CORRECCIÓN: status===0 es ERROR de red/CORS, no éxito
       if(xhr.status >= 200 && xhr.status < 300){
         setProgress(100, '¡Reserva confirmada! ✅');
         settle(resolve, xhr.responseText);
       } else if(xhr.status === 0){
-        settle(reject, new Error('ERROR_CORS_O_RED'));
+        // status 0 = error de red o CORS, NUNCA éxito
+        settle(reject, new Error('ERROR_RED'));
       } else {
         settle(reject, new Error('HTTP_' + xhr.status));
       }
     });
 
-    xhr.addEventListener('error', () => {
-      settle(reject, new Error('ERROR_RED'));
-    });
-
-    // abort event: el rechazo ya fue emitido por el timer
-    // No hacer nada aquí para evitar doble rechazo
+    xhr.addEventListener('error', () => settle(reject, new Error('ERROR_RED')));
+    // abort: el timer ya emitió el rechazo, no hacer nada aquí
 
     xhr.open('POST', WEBHOOK_URL);
     xhr.send(formData);
   });
 }
 
-/* ─────────────────────────────────────────
-   ENVÍO CON RETRY AUTOMÁTICO
-   - Intento 1: inmediato
-   - Intento 2: tras 3s (pausa para red recuperarse)
-   - Intento 3: tras 6s
-───────────────────────────────────────── */
-const RETRY_DELAYS = [0, 3000, 6000];
+/* ══════════════════════════════════════════
+   REINTENTOS EN BUCLE LINEAL
+   (sin recursión anidada — evita condiciones
+   de carrera entre timers de intentos previos)
+══════════════════════════════════════════ */
+async function uploadConReintentos(formData){
+  let ultimoError;
 
-async function uploadConRetry(formData){
-  let lastError;
-  for(let i = 0; i < RETRY_DELAYS.length; i++){
+  for(let i = 0; i < MAX_INTENTOS; i++){
+    // Pausa antes del 2.º y 3.er intento
     if(RETRY_DELAYS[i] > 0){
-      const label = ` (intento ${i+1}/${RETRY_DELAYS.length})`;
-      setProgress(0, `Reintentando${label}…`);
+      setProgress(0, `Reintentando en ${RETRY_DELAYS[i]/1000}s…`);
       await new Promise(r => setTimeout(r, RETRY_DELAYS[i]));
     }
-    const attemptLabel = i > 0 ? ` (intento ${i+1})` : '';
+
+    const label = i > 0 ? ` (intento ${i+1}/${MAX_INTENTOS})` : '';
+    setRetryBadge(i + 1);
+
     try {
-      const result = await uploadWithProgress(formData, attemptLabel);
-      return result; // Éxito
+      return await singleUpload(formData, label);
     } catch(err){
-      lastError = err;
+      ultimoError = err;
       console.warn(`Intento ${i+1} fallido:`, err.message);
-      // No reintentar si fue timeout de respuesta
-      // (la imagen ya llegó, solo n8n tardó)
+
+      // TIMEOUT_RESPONSE: la imagen llegó al servidor, n8n procesa.
+      // Reintentar enviaría el archivo DOS VECES → no reintentar.
       if(err.message === 'TIMEOUT_RESPONSE') break;
+
+      // Error HTTP 4xx (ej. 400, 404): reintentar no cambiará el resultado
+      if(err.message.startsWith('HTTP_4')) break;
     }
   }
-  throw lastError;
+
+  throw ultimoError;
 }
 
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════
    ENVIAR
-───────────────────────────────────────── */
+══════════════════════════════════════════ */
 async function enviar(){
-  if(enviando) return; // Bloquear doble tap
+  if(enviando) return; // Bloquea doble tap
 
-  if(!destino)   { alert('Selecciona un destino'); return; }
-  if(!precio)    { alert('Selecciona una tarifa'); return; }
-  if(!fotoBlob)  { alert('Adjunta tu foto de identidad'); return; }
+  if(!destino)  { alert('Selecciona un destino');          return; }
+  if(!precio)   { alert('Selecciona una tarifa');          return; }
+  if(!fotoBlob) { alert('Adjunta tu foto de identidad');   return; }
 
   const btn          = document.getElementById('submitBtn');
   const progressWrap = document.getElementById('progress-wrap');
 
-  enviando        = true;
+  enviando = true;
   btn.disabled    = true;
   btn.textContent = 'Enviando…';
   progressWrap.style.display = 'block';
@@ -579,70 +549,51 @@ async function enviar(){
   const chatId   = tg?.initDataUnsafe?.user?.id       || '';
   const username = tg?.initDataUnsafe?.user?.username || '';
 
-  const formData = new FormData();
-  formData.append('destino',           destino);
-  formData.append('precio',            precio);
-  formData.append('precio_label',      precioLabel);
-  formData.append('chat_id',           chatId);
-  formData.append('username',          username);
-  formData.append('wa_phone',          _waPhone);
-  formData.append('wa_name',           _waName);
-  formData.append('wa_phone_number_id',_waPhoneNumberId);
-  formData.append('foto', fotoBlob, 'documento.jpg');
+  const fd = new FormData();
+  fd.append('destino',            destino);
+  fd.append('precio',             precio);
+  fd.append('precio_label',       precioLabel);
+  fd.append('chat_id',            chatId);
+  fd.append('username',           username);
+  fd.append('wa_phone',           _waPhone);
+  fd.append('wa_name',            _waName);
+  fd.append('wa_phone_number_id', _waPhoneNumberId);
+  fd.append('foto', fotoBlob, 'documento.jpg');
 
   try {
-    await uploadConRetry(formData);
+    await uploadConReintentos(fd);
 
-    // Mostrar pantalla de éxito
     setTimeout(() => {
-      document.getElementById('sc-destino').textContent =
-        destino;
+      document.getElementById('sc-destino').textContent = destino;
       document.getElementById('sc-tarifa').textContent  =
         precioLabel + ' — ' + Number(precio).toLocaleString('es') + ' FCFA';
       document.getElementById('success-screen').classList.add('visible');
     }, 500);
 
   } catch(err){
-    // Restaurar UI
     enviando = false;
     progressWrap.style.display = 'none';
     btn.disabled    = false;
     btn.innerHTML   = '🚢 Confirmar Reserva';
+    setRetryBadge(0);
 
-    const msg = err.message || '';
-
+    const msg = err?.message || '';
     if(msg === 'TIMEOUT_UPLOAD'){
-      alert(
-        '⚠️ La imagen tardó demasiado en subirse.\n\n' +
-        'Comprueba tu conexión a internet e inténtalo de nuevo. ' +
-        'Si el problema persiste, intenta con una imagen de menor tamaño.'
-      );
+      alert('⏱️ La imagen tardó demasiado en subirse tras ' + MAX_INTENTOS + ' intentos.\n\nComprueba tu conexión e inténtalo de nuevo, o usa una imagen más pequeña.');
     } else if(msg === 'TIMEOUT_RESPONSE'){
-      // La imagen llegó pero n8n tardó — probablemente se procesó igual
-      alert(
-        '⏳ La imagen se envió correctamente pero el servidor tardó en confirmar.\n\n' +
-        'Es muy posible que tu reserva ya esté registrada. ' +
-        'Espera unos segundos y revisa si recibiste mensaje antes de volver a intentarlo.'
-      );
-    } else if(msg === 'ERROR_CORS_O_RED' || msg === 'ERROR_RED'){
-      alert(
-        '📶 Sin conexión a internet.\n\n' +
-        'Comprueba tu red e inténtalo de nuevo.'
-      );
+      alert('⏳ La imagen se envió pero el servidor tardó en confirmar.\n\nEs muy probable que tu reserva ya esté registrada. Espera unos segundos y revisa si recibiste mensaje antes de volver a intentarlo.');
+    } else if(msg === 'ERROR_RED'){
+      alert('📶 Sin conexión a internet.\n\nComprueba tu red e inténtalo de nuevo.');
     } else {
-      alert(
-        '❌ Error al enviar (' + msg + ').\n\n' +
-        'Inténtalo de nuevo en unos segundos.'
-      );
+      alert('❌ Error al enviar (' + msg + ').\n\nInténtalo de nuevo en unos segundos.');
     }
-
-    console.error('Error de envío:', err);
+    console.error('Error final tras reintentos:', err);
   }
 }
 
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════
    VOLVER A WHATSAPP
-───────────────────────────────────────── */
+══════════════════════════════════════════ */
 function volverWhatsApp(){
   if(tg){ tg.close(); return; }
   try {
