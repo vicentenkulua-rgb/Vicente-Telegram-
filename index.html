@@ -55,6 +55,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 #preview-box img{width:100%;height:160px;object-fit:cover;display:block;}
 .preview-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);padding:12px;display:flex;align-items:center;justify-content:space-between;}
 .preview-bar span{font-size:12px;color:#fff;font-weight:600;}
+.preview-size{font-size:10px;color:rgba(255,255,255,0.7);margin-top:2px;}
 .change-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;}
 .submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--red-light),var(--red-dark));border:none;border-radius:16px;color:#fff;font-size:17px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(200,16,46,0.35);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
@@ -65,7 +66,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 #progress-label{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
 #progress-label span{font-size:11px;color:var(--muted);font-weight:500;}
 #progress-track{width:100%;height:8px;background:#f0f0f0;border-radius:99px;overflow:hidden;}
-#progress-bar{height:100%;width:0%;background:linear-gradient(to right,var(--red-light),var(--red-dark));border-radius:99px;transition:width 0.3s ease;}
+#progress-bar{height:100%;width:0%;background:linear-gradient(to right,var(--red-light),var(--red-dark));border-radius:99px;transition:width 0.4s ease;}
 #progress-status{font-size:11px;color:var(--muted);margin-top:6px;text-align:center;}
 
 /* ── COMPRESSING OVERLAY ── */
@@ -74,6 +75,9 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .compress-label{font-size:13px;color:#fff;font-weight:600;letter-spacing:1px;}
+
+/* ── RETRY BADGE ── */
+.retry-badge{display:inline-block;background:rgba(200,16,46,0.1);color:var(--red);border-radius:6px;font-size:10px;font-weight:700;padding:2px 7px;margin-left:6px;letter-spacing:1px;}
 
 @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 .header{animation:slideUp 0.3s ease both;}
@@ -85,149 +89,33 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .body>*:nth-child(5){animation-delay:0.25s}
 .body>*:nth-child(6){animation-delay:0.3s}
 .body>*:nth-child(7){animation-delay:0.35s}
-@keyframes fadeOut{to{opacity:0;transform:scale(0.95)}}
-.closing{animation:fadeOut 0.3s ease forwards;}
 
 /* ── SUCCESS SCREEN ── */
-#success-screen{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:#f8f8f8;
-  z-index:1000;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding:32px 24px;
-  text-align:center;
-}
+#success-screen{display:none;position:fixed;inset:0;background:#f8f8f8;z-index:1000;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;}
 #success-screen.visible{display:flex;}
-
-@keyframes scaleIn{
-  0%{opacity:0;transform:scale(0.4)}
-  70%{transform:scale(1.1)}
-  100%{opacity:1;transform:scale(1)}
-}
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(24px)}
-  to{opacity:1;transform:translateY(0)}
-}
-@keyframes pulse-ring{
-  0%{transform:scale(1);opacity:0.6}
-  100%{transform:scale(1.5);opacity:0}
-}
-
-.success-ring{
-  position:relative;
-  width:100px;height:100px;
-  margin-bottom:28px;
-}
-.success-ring::before{
-  content:'';
-  position:absolute;
-  inset:-10px;
-  border-radius:50%;
-  border:3px solid var(--green);
-  animation:pulse-ring 1.8s ease-out 0.4s infinite;
-}
-.success-icon{
-  width:100px;height:100px;
-  border-radius:50%;
-  background:linear-gradient(135deg,#00a86b,var(--green));
-  display:flex;align-items:center;justify-content:center;
-  font-size:44px;
-  box-shadow:0 8px 28px rgba(0,107,63,0.35);
-  animation:scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
-}
-.success-title{
-  font-size:24px;
-  font-weight:900;
-  color:#1a1a1a;
-  letter-spacing:0.5px;
-  margin-bottom:10px;
-  animation:fadeUp 0.4s ease 0.3s both;
-}
-.success-subtitle{
-  font-size:15px;
-  color:#555;
-  line-height:1.6;
-  margin-bottom:28px;
-  max-width:280px;
-  animation:fadeUp 0.4s ease 0.45s both;
-}
-.success-divider{
-  width:48px;height:3px;
-  background:linear-gradient(to right,var(--red),var(--green));
-  border-radius:99px;
-  margin:0 auto 28px;
-  animation:fadeUp 0.4s ease 0.5s both;
-}
-.success-card{
-  background:#fff;
-  border-radius:20px;
-  padding:20px 24px;
-  width:100%;
-  max-width:340px;
-  box-shadow:0 4px 20px rgba(0,0,0,0.08);
-  margin-bottom:28px;
-  animation:fadeUp 0.4s ease 0.55s both;
-}
-.success-card-row{
-  display:flex;align-items:center;gap:12px;
-  padding:10px 0;
-  border-bottom:1px solid #f0f0f0;
-}
+@keyframes scaleIn{0%{opacity:0;transform:scale(0.4)}70%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.5);opacity:0}}
+.success-ring{position:relative;width:100px;height:100px;margin-bottom:28px;}
+.success-ring::before{content:'';position:absolute;inset:-10px;border-radius:50%;border:3px solid var(--green);animation:pulse-ring 1.8s ease-out 0.4s infinite;}
+.success-icon{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#00a86b,var(--green));display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 8px 28px rgba(0,107,63,0.35);animation:scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
+.success-title{font-size:24px;font-weight:900;color:#1a1a1a;letter-spacing:0.5px;margin-bottom:10px;animation:fadeUp 0.4s ease 0.3s both;}
+.success-subtitle{font-size:15px;color:#555;line-height:1.6;margin-bottom:28px;max-width:280px;animation:fadeUp 0.4s ease 0.45s both;}
+.success-divider{width:48px;height:3px;background:linear-gradient(to right,var(--red),var(--green));border-radius:99px;margin:0 auto 28px;animation:fadeUp 0.4s ease 0.5s both;}
+.success-card{background:#fff;border-radius:20px;padding:20px 24px;width:100%;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,0.08);margin-bottom:28px;animation:fadeUp 0.4s ease 0.55s both;}
+.success-card-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f0f0;}
 .success-card-row:last-child{border-bottom:none;}
 .success-card-icon{font-size:20px;width:32px;text-align:center;}
 .success-card-text{text-align:left;}
 .success-card-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
 .success-card-value{font-size:14px;font-weight:700;color:var(--text);margin-top:1px;}
-
-.wa-btn{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  width:100%;
-  max-width:340px;
-  padding:16px 20px;
-  background:linear-gradient(135deg,#25d366,#128c7e);
-  border:none;
-  border-radius:16px;
-  color:#fff;
-  font-size:16px;
-  font-weight:800;
-  letter-spacing:0.5px;
-  cursor:pointer;
-  box-shadow:0 6px 20px rgba(37,211,102,0.35);
-  animation:fadeUp 0.4s ease 0.65s both;
-  transition:transform 0.15s,box-shadow 0.15s;
-  font-family:inherit;
-}
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:340px;padding:16px 20px;background:linear-gradient(135deg,#25d366,#128c7e);border:none;border-radius:16px;color:#fff;font-size:16px;font-weight:800;letter-spacing:0.5px;cursor:pointer;box-shadow:0 6px 20px rgba(37,211,102,0.35);animation:fadeUp 0.4s ease 0.65s both;transition:transform 0.15s,box-shadow 0.15s;font-family:inherit;}
 .wa-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(37,211,102,0.25);}
 .wa-icon{font-size:22px;line-height:1;}
 .wa-btn-text{display:flex;flex-direction:column;align-items:flex-start;}
 .wa-btn-main{font-size:15px;font-weight:800;}
 .wa-btn-sub{font-size:11px;font-weight:500;opacity:0.85;margin-top:1px;}
-
-.success-footer{
-  font-size:11px;
-  color:#bbb;
-  margin-top:20px;
-  animation:fadeUp 0.4s ease 0.75s both;
-}
-
-/* ── RETRY INDICATOR ── */
-.retry-badge{
-  display:inline-block;
-  background:#ff9800;
-  color:#fff;
-  padding:4px 8px;
-  border-radius:4px;
-  font-size:10px;
-  font-weight:700;
-  margin-left:6px;
-}
+.success-footer{font-size:11px;color:#bbb;margin-top:20px;animation:fadeUp 0.4s ease 0.75s both;}
 </style>
 </head>
 <body>
@@ -276,7 +164,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 <!-- Overlay compresión -->
 <div id="compress-overlay">
   <div class="spinner"></div>
-  <div class="compress-label">Optimizando imagen…</div>
+  <div class="compress-label" id="compress-label-text">Optimizando imagen…</div>
 </div>
 
 <div class="header">
@@ -341,14 +229,17 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
   <div id="preview-box">
     <img id="preview-img" src="" alt="DNI">
     <div class="preview-bar">
-      <span>✅ Documento adjuntado</span>
+      <div>
+        <span>✅ Documento adjuntado</span>
+        <div class="preview-size" id="preview-size"></div>
+      </div>
       <button class="change-btn" onclick="changePhoto()">Cambiar</button>
     </div>
   </div>
 
   <!-- BARRA DE PROGRESO -->
   <div id="progress-wrap">
-    <div id="progress-label">Enviando reserva… <span id="progress-pct">0%</span><span id="retry-count"></span></div>
+    <div id="progress-label">Enviando reserva… <span id="progress-pct">0%</span></div>
     <div id="progress-track"><div id="progress-bar"></div></div>
     <div id="progress-status">Preparando datos…</div>
   </div>
@@ -361,330 +252,403 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 </div>
 
 <script>
+/* ─────────────────────────────────────────
+   CONFIGURACIÓN
+───────────────────────────────────────── */
+const WEBHOOK_URL    = 'https://yo21.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
+const WEBHOOK_SESION = 'https://hijo50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
+
+// Timeouts ajustados: más generosos para redes lentas de África Central
+const UPLOAD_TIMEOUT_MS   = 90000;  // 90s para subir el archivo
+const RESPONSE_TIMEOUT_MS = 120000; // 120s para que n8n responda tras subir
+
+// Compresión adaptativa según tamaño original
+const COMPRESS_CONFIG = [
+  { maxBytes: 500_000,   maxW: 1200, quality: 0.85 }, // < 500 KB → suave
+  { maxBytes: 1_500_000, maxW: 1000, quality: 0.78 }, // < 1.5 MB → media
+  { maxBytes: Infinity,  maxW: 800,  quality: 0.70 }, // > 1.5 MB → agresiva
+];
+
+/* ─────────────────────────────────────────
+   TELEGRAM
+───────────────────────────────────────── */
 const tg = window.Telegram?.WebApp;
-if(tg){tg.ready();tg.expand();}
+if(tg){ tg.ready(); tg.expand(); }
 
-// Leer datos del usuario desde la URL
-const _urlParams = new URLSearchParams(window.location.search);
-const _codigoSesion    = _urlParams.get('codigo')         || '';
-const _waPhone         = _urlParams.get('phone')          || '';
-const _waName          = _urlParams.get('name')           || '';
-const _waPhoneNumberId = _urlParams.get('phone_number_id')|| '';
+/* ─────────────────────────────────────────
+   PARÁMETROS DE URL
+───────────────────────────────────────── */
+const _urlParams        = new URLSearchParams(window.location.search);
+const _codigoSesion     = _urlParams.get('codigo')          || '';
+const _waPhone          = _urlParams.get('phone')           || '';
+const _waName           = _urlParams.get('name')            || '';
+const _waPhoneNumberId  = _urlParams.get('phone_number_id') || '';
 
-console.log('Código de sesión leído:', _codigoSesion);
-
-let destino='', precio='', precioLabel='', fotoBlob=null;
-
-// Si hay código de sesión, recuperar datos
-if(_codigoSesion) {
-  fetch('https://hijo50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa?codigo=' + _codigoSesion, {
-    method: 'POST'
-  })
-  .then(response => response.json())
-  .then(datos => {
-    console.log('Datos recuperados del webhook:', datos);
-  })
-  .catch(error => console.error('Error al recuperar datos:', error));
+// Recuperar datos de sesión si hay código — sin bloquear la UI
+if(_codigoSesion){
+  fetch(WEBHOOK_SESION + '?codigo=' + encodeURIComponent(_codigoSesion), { method:'POST' })
+    .then(r => r.json())
+    .then(d => console.log('Sesión recuperada:', d))
+    .catch(e => console.warn('Sesión no recuperada (no crítico):', e));
 }
 
+/* ─────────────────────────────────────────
+   ESTADO
+───────────────────────────────────────── */
+let destino     = '';
+let precio      = '';
+let precioLabel = '';
+let fotoBlob    = null;
+let enviando    = false; // Protege contra doble envío
+
+/* ─────────────────────────────────────────
+   SELECCIÓN
+───────────────────────────────────────── */
 function selectDest(el, val){
-  document.querySelectorAll('.dest-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.dest-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
-  destino=val;
+  destino = val;
 }
 
 function selectPrice(el, val, label){
-  document.querySelectorAll('.price-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
-  precio=val;
-  precioLabel=label;
+  precio      = val;
+  precioLabel = label;
 }
 
-/* ─── COMPRESIÓN DE IMAGEN CON CANVAS ─── */
-function compressImage(file, maxW=1200, maxH=1200, quality=0.82){
-  return new Promise((resolve, reject)=>{
-    const overlay=document.getElementById('compress-overlay');
+/* ─────────────────────────────────────────
+   COMPRESIÓN ADAPTATIVA
+───────────────────────────────────────── */
+function getCompressConfig(fileSize){
+  return COMPRESS_CONFIG.find(c => fileSize < c.maxBytes);
+}
+
+function formatBytes(bytes){
+  if(bytes < 1024)        return bytes + ' B';
+  if(bytes < 1_048_576)   return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1_048_576).toFixed(1) + ' MB';
+}
+
+function compressImage(file){
+  return new Promise((resolve, reject) => {
+    const overlay    = document.getElementById('compress-overlay');
+    const labelEl    = document.getElementById('compress-label-text');
+    const cfg        = getCompressConfig(file.size);
+
     overlay.classList.add('visible');
+    labelEl.textContent = 'Optimizando imagen…';
 
-    const img=new Image();
-    const url=URL.createObjectURL(file);
-    img.onload=()=>{
-      URL.revokeObjectURL(url);
-      let w=img.width, h=img.height;
+    // Usar createImageBitmap si está disponible (más rápido, no bloquea UI)
+    const drawToCanvas = (source, w, h) => {
+      const canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(source, 0, 0, w, h);
+      return canvas;
+    };
 
-      // Escalar manteniendo proporción
-      if(w>maxW||h>maxH){
-        const ratio=Math.min(maxW/w, maxH/h);
-        w=Math.round(w*ratio);
-        h=Math.round(h*ratio);
+    const handleBitmap = (bitmap) => {
+      let w = bitmap.width, h = bitmap.height;
+      if(w > cfg.maxW || h > cfg.maxW){
+        const ratio = Math.min(cfg.maxW/w, cfg.maxW/h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
       }
-
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      const ctx=canvas.getContext('2d');
-      ctx.drawImage(img,0,0,w,h);
-
-      canvas.toBlob(blob=>{
+      const canvas = drawToCanvas(bitmap, w, h);
+      canvas.toBlob(blob => {
         overlay.classList.remove('visible');
         if(blob) resolve(blob);
-        else reject(new Error('No se pudo comprimir la imagen'));
-      },'image/jpeg', quality);
+        else reject(new Error('toBlob falló'));
+      }, 'image/jpeg', cfg.quality);
     };
-    img.onerror=()=>{
-      URL.revokeObjectURL(url);
-      overlay.classList.remove('visible');
-      reject(new Error('No se pudo leer la imagen'));
-    };
-    img.src=url;
+
+    if(typeof createImageBitmap !== 'undefined'){
+      createImageBitmap(file)
+        .then(handleBitmap)
+        .catch(() => fallbackCompress(file, cfg, overlay, resolve, reject));
+    } else {
+      fallbackCompress(file, cfg, overlay, resolve, reject);
+    }
   });
 }
 
+// Fallback con Image + URL.createObjectURL
+function fallbackCompress(file, cfg, overlay, resolve, reject){
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    let w = img.width, h = img.height;
+    if(w > cfg.maxW || h > cfg.maxW){
+      const ratio = Math.min(cfg.maxW/w, cfg.maxW/h);
+      w = Math.round(w*ratio);
+      h = Math.round(h*ratio);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width  = w;
+    canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    canvas.toBlob(blob => {
+      overlay.classList.remove('visible');
+      if(blob) resolve(blob);
+      else reject(new Error('toBlob falló (fallback)'));
+    }, 'image/jpeg', cfg.quality);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    overlay.classList.remove('visible');
+    reject(new Error('No se pudo leer la imagen'));
+  };
+  img.src = url;
+}
+
+/* ─────────────────────────────────────────
+   MANEJO DE FOTO
+───────────────────────────────────────── */
 async function handlePhoto(input){
-  const file=input.files[0];
+  const file = input.files[0];
   if(!file) return;
 
-  try{
-    // Solo comprimir si es imagen (PDF se envía tal cual)
+  try {
     if(file.type.startsWith('image/')){
-      fotoBlob=await compressImage(file);
+      fotoBlob = await compressImage(file);
     } else {
-      fotoBlob=file;
+      // PDF u otro: pasar tal cual (sin overlay)
+      fotoBlob = file;
     }
 
-    // Preview con la imagen comprimida
-    const previewUrl=URL.createObjectURL(fotoBlob);
-    document.getElementById('preview-img').src=previewUrl;
-    document.getElementById('uploadArea').style.display='none';
-    document.getElementById('preview-box').style.display='block';
+    // Mostrar preview
+    const previewUrl = URL.createObjectURL(fotoBlob);
+    document.getElementById('preview-img').src   = previewUrl;
+    document.getElementById('preview-size').textContent = formatBytes(fotoBlob.size);
+    document.getElementById('uploadArea').style.display  = 'none';
+    document.getElementById('preview-box').style.display = 'block';
 
-  }catch(err){
+  } catch(err){
     alert('Error al procesar la imagen. Inténtalo de nuevo.');
-    console.error(err);
+    console.error('compressImage error:', err);
   }
 }
 
 function changePhoto(){
-  fotoBlob=null;
-  document.getElementById('photoInput').value='';
-  document.getElementById('preview-box').style.display='none';
-  document.getElementById('uploadArea').style.display='block';
+  fotoBlob = null;
+  document.getElementById('photoInput').value        = '';
+  document.getElementById('preview-box').style.display  = 'none';
+  document.getElementById('uploadArea').style.display   = '';
 }
 
-/* ─── PROGRESO VISUAL ─── */
+/* ─────────────────────────────────────────
+   PROGRESO
+───────────────────────────────────────── */
 function setProgress(pct, status){
-  document.getElementById('progress-bar').style.width=pct+'%';
-  document.getElementById('progress-pct').textContent=pct+'%';
-  if(status) document.getElementById('progress-status').textContent=status;
+  document.getElementById('progress-bar').style.width   = pct + '%';
+  document.getElementById('progress-pct').textContent   = pct + '%';
+  if(status) document.getElementById('progress-status').textContent = status;
 }
 
-function setRetryBadge(attempt, maxAttempts){
-  const badge = document.getElementById('retry-count');
-  if(attempt > 1){
-    badge.innerHTML = `<span class="retry-badge">Intento ${attempt}/${maxAttempts}</span>`;
-  } else {
-    badge.innerHTML = '';
-  }
-}
+/* ─────────────────────────────────────────
+   UPLOAD CON XHR + TIMEOUTS SEPARADOS
 
-/* ─── ENVÍO CON XMLHttpRequest Y REINTENTOS ───
-   MEJORAS IMPLEMENTADAS:
-   · Reintentos automáticos (máximo 3 intentos)
-   · Limpieza garantizada de timers en todos los casos
-   · Validación de estado del XHR antes de abortar
-   · Timeouts separados para upload y response
-   · Mejor manejo de errores de red
-   · Feedback visual mejorado
-─── */
-function uploadWithProgress(formData, attempt=1, maxAttempts=3){
-  return new Promise((resolve, reject)=>{
-    const xhr=new XMLHttpRequest();
-    const UPLOAD_TIMEOUT_MS  = 50000; // 50s para subir (aumentado)
-    const RESPONSE_TIMEOUT_MS= 120000; // 120s para respuesta (aumentado)
-    let uploadTimer=null;
-    let responseTimer=null;
-    let uploadComplete=false;
-    let requestAborted=false;
+   CORRECCIONES CLAVE:
+   1. status===0 ya NO se trata como éxito.
+      n8n siempre responde con un código HTTP
+      incluso si el webhook no tiene "Respond to
+      Webhook" configurado (responde 200 vacío).
+      Si status===0 es un error real de red o CORS.
+   2. Timer de respuesta sólo arranca tras
+      confirmar que la subida terminó (evento
+      upload.load), evitando falsos timeouts.
+   3. El abort() del timer NO genera un rechazo
+      doble gracias a la bandera `settled`.
+───────────────────────────────────────── */
+function uploadWithProgress(formData, attemptLabel){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    let uploadTimer   = null;
+    let responseTimer = null;
+    let settled       = false; // Evita resolver/rechazar dos veces
 
-    // Función auxiliar para limpiar todos los timers
-    const cleanupTimers = () => {
-      if(uploadTimer) clearTimeout(uploadTimer);
-      if(responseTimer) clearTimeout(responseTimer);
-      uploadTimer=null;
-      responseTimer=null;
+    const settle = (fn, val) => {
+      if(settled) return;
+      settled = true;
+      clearTimeout(uploadTimer);
+      clearTimeout(responseTimer);
+      fn(val);
     };
 
-    // Función auxiliar para abortar la solicitud de forma segura
-    const safeAbort = () => {
-      if(!requestAborted && xhr.readyState !== XMLHttpRequest.UNSENT && xhr.readyState !== XMLHttpRequest.DONE){
-        requestAborted=true;
-        xhr.abort();
-      }
-    };
-
-    // Timer de subida: arranca al hacer .send()
-    uploadTimer=setTimeout(()=>{
-      if(!uploadComplete && !requestAborted){
-        console.warn('Timeout en subida de archivo');
-        safeAbort();
-        cleanupTimers();
-        
-        // Reintentar si no hemos alcanzado el máximo
-        if(attempt < maxAttempts){
-          console.log(`Reintentando... (${attempt+1}/${maxAttempts})`);
-          setRetryBadge(attempt+1, maxAttempts);
-          uploadWithProgress(formData, attempt+1, maxAttempts).then(resolve).catch(reject);
-        } else {
-          reject(new Error('TIMEOUT_UPLOAD'));
-        }
-      }
+    // Timer de subida
+    uploadTimer = setTimeout(() => {
+      xhr.abort();
+      settle(reject, new Error('TIMEOUT_UPLOAD'));
     }, UPLOAD_TIMEOUT_MS);
 
-    xhr.upload.addEventListener('progress', e=>{
-      if(e.lengthComputable){
-        const pct=Math.round((e.loaded/e.total)*100);
-        const statusMsg = pct<100 ? `Subiendo imagen… ${pct}%` : 'Imagen enviada. Confirmando reserva…';
-        setProgress(pct, statusMsg);
-      }
+    // Progreso de subida
+    xhr.upload.addEventListener('progress', e => {
+      if(!e.lengthComputable) return;
+      const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+      setProgress(pct, `Subiendo${attemptLabel}… ${pct}%`);
     });
 
-    // Cuando termina la subida: cancelar timer de subida, arrancar timer de respuesta
-    xhr.upload.addEventListener('load', ()=>{
-      uploadComplete=true;
-      if(uploadTimer){
-        clearTimeout(uploadTimer);
-        uploadTimer=null;
-      }
-      setProgress(100,'Imagen enviada. Confirmando reserva…');
-      
-      // Ahora esperamos la respuesta HTTP del servidor (n8n puede tardar)
-      responseTimer=setTimeout(()=>{
-        if(!requestAborted){
-          console.warn('Timeout en respuesta del servidor');
-          safeAbort();
-          cleanupTimers();
-          
-          // Reintentar si no hemos alcanzado el máximo
-          if(attempt < maxAttempts){
-            console.log(`Reintentando... (${attempt+1}/${maxAttempts})`);
-            setRetryBadge(attempt+1, maxAttempts);
-            uploadWithProgress(formData, attempt+1, maxAttempts).then(resolve).catch(reject);
-          } else {
-            reject(new Error('TIMEOUT_RESPONSE'));
-          }
-        }
+    // Subida completa → activar timer de respuesta
+    xhr.upload.addEventListener('load', () => {
+      clearTimeout(uploadTimer);
+      setProgress(99, 'Imagen enviada. Confirmando reserva…');
+
+      responseTimer = setTimeout(() => {
+        xhr.abort();
+        settle(reject, new Error('TIMEOUT_RESPONSE'));
       }, RESPONSE_TIMEOUT_MS);
     });
 
-    xhr.addEventListener('load', ()=>{
-      cleanupTimers();
-      // n8n puede responder 200 o incluso 0 en webhooks sin return — tratamos ambos como éxito
-      if(xhr.status===0 || (xhr.status>=200 && xhr.status<300)){
-        setProgress(100,'¡Reserva confirmada! ✅');
-        resolve(xhr.responseText);
+    // Respuesta HTTP recibida
+    xhr.addEventListener('load', () => {
+      // CORRECCIÓN: status===0 es ERROR de red/CORS, no éxito
+      if(xhr.status >= 200 && xhr.status < 300){
+        setProgress(100, '¡Reserva confirmada! ✅');
+        settle(resolve, xhr.responseText);
+      } else if(xhr.status === 0){
+        settle(reject, new Error('ERROR_CORS_O_RED'));
       } else {
-        // Reintentar en caso de error HTTP
-        if(attempt < maxAttempts && (xhr.status===0 || xhr.status>=500)){
-          console.log(`Error HTTP ${xhr.status}, reintentando... (${attempt+1}/${maxAttempts})`);
-          setRetryBadge(attempt+1, maxAttempts);
-          uploadWithProgress(formData, attempt+1, maxAttempts).then(resolve).catch(reject);
-        } else {
-          reject(new Error('HTTP '+xhr.status));
-        }
+        settle(reject, new Error('HTTP_' + xhr.status));
       }
     });
 
-    xhr.addEventListener('error', ()=>{
-      cleanupTimers();
-      // Reintentar en caso de error de red
-      if(attempt < maxAttempts){
-        console.log(`Error de red, reintentando... (${attempt+1}/${maxAttempts})`);
-        setRetryBadge(attempt+1, maxAttempts);
-        uploadWithProgress(formData, attempt+1, maxAttempts).then(resolve).catch(reject);
-      } else {
-        reject(new Error('ERROR_RED'));
-      }
+    xhr.addEventListener('error', () => {
+      settle(reject, new Error('ERROR_RED'));
     });
 
-    xhr.addEventListener('abort', ()=>{
-      cleanupTimers();
-      // El rechazo ya fue emitido por el timer que llamó a abort()
-    });
+    // abort event: el rechazo ya fue emitido por el timer
+    // No hacer nada aquí para evitar doble rechazo
 
-    xhr.open('POST','https://yo21.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa');
+    xhr.open('POST', WEBHOOK_URL);
     xhr.send(formData);
   });
 }
 
+/* ─────────────────────────────────────────
+   ENVÍO CON RETRY AUTOMÁTICO
+   - Intento 1: inmediato
+   - Intento 2: tras 3s (pausa para red recuperarse)
+   - Intento 3: tras 6s
+───────────────────────────────────────── */
+const RETRY_DELAYS = [0, 3000, 6000];
+
+async function uploadConRetry(formData){
+  let lastError;
+  for(let i = 0; i < RETRY_DELAYS.length; i++){
+    if(RETRY_DELAYS[i] > 0){
+      const label = ` (intento ${i+1}/${RETRY_DELAYS.length})`;
+      setProgress(0, `Reintentando${label}…`);
+      await new Promise(r => setTimeout(r, RETRY_DELAYS[i]));
+    }
+    const attemptLabel = i > 0 ? ` (intento ${i+1})` : '';
+    try {
+      const result = await uploadWithProgress(formData, attemptLabel);
+      return result; // Éxito
+    } catch(err){
+      lastError = err;
+      console.warn(`Intento ${i+1} fallido:`, err.message);
+      // No reintentar si fue timeout de respuesta
+      // (la imagen ya llegó, solo n8n tardó)
+      if(err.message === 'TIMEOUT_RESPONSE') break;
+    }
+  }
+  throw lastError;
+}
+
+/* ─────────────────────────────────────────
+   ENVIAR
+───────────────────────────────────────── */
 async function enviar(){
-  if(!destino){alert('Selecciona un destino');return;}
-  if(!precio){alert('Selecciona una tarifa');return;}
-  if(!fotoBlob){alert('Adjunta tu foto de identidad');return;}
+  if(enviando) return; // Bloquear doble tap
 
-  const btn=document.getElementById('submitBtn');
-  const progressWrap=document.getElementById('progress-wrap');
+  if(!destino)   { alert('Selecciona un destino'); return; }
+  if(!precio)    { alert('Selecciona una tarifa'); return; }
+  if(!fotoBlob)  { alert('Adjunta tu foto de identidad'); return; }
 
-  btn.disabled=true;
-  btn.textContent='Enviando…';
-  progressWrap.style.display='block';
-  setProgress(0,'Preparando datos…');
-  setRetryBadge(1, 3);
+  const btn          = document.getElementById('submitBtn');
+  const progressWrap = document.getElementById('progress-wrap');
 
-  const chatId=tg?.initDataUnsafe?.user?.id||'';
-  const username=tg?.initDataUnsafe?.user?.username||'';
+  enviando        = true;
+  btn.disabled    = true;
+  btn.textContent = 'Enviando…';
+  progressWrap.style.display = 'block';
+  setProgress(0, 'Preparando datos…');
 
-  // FormData con binario — mucho más eficiente que Base64 en JSON
-  const formData=new FormData();
-  formData.append('destino', destino);
-  formData.append('precio', precio);
-  formData.append('precio_label', precioLabel);
-  formData.append('chat_id', chatId);
-  formData.append('username', username);
-  // Datos de WhatsApp leídos desde la URL
+  const chatId   = tg?.initDataUnsafe?.user?.id       || '';
+  const username = tg?.initDataUnsafe?.user?.username || '';
+
+  const formData = new FormData();
+  formData.append('destino',           destino);
+  formData.append('precio',            precio);
+  formData.append('precio_label',      precioLabel);
+  formData.append('chat_id',           chatId);
+  formData.append('username',          username);
   formData.append('wa_phone',          _waPhone);
   formData.append('wa_name',           _waName);
   formData.append('wa_phone_number_id',_waPhoneNumberId);
   formData.append('foto', fotoBlob, 'documento.jpg');
 
-  try{
-    await uploadWithProgress(formData);
+  try {
+    await uploadConRetry(formData);
 
     // Mostrar pantalla de éxito
-    setTimeout(()=>{
-      document.getElementById('sc-destino').textContent = destino;
-      document.getElementById('sc-tarifa').textContent  = precioLabel + ' — ' + Number(precio).toLocaleString('es') + ' FCFA';
+    setTimeout(() => {
+      document.getElementById('sc-destino').textContent =
+        destino;
+      document.getElementById('sc-tarifa').textContent  =
+        precioLabel + ' — ' + Number(precio).toLocaleString('es') + ' FCFA';
       document.getElementById('success-screen').classList.add('visible');
-    }, 600);
+    }, 500);
 
-  }catch(err){
-    progressWrap.style.display='none';
-    btn.disabled=false;
-    btn.innerHTML='🚢 Confirmar Reserva';
-    setRetryBadge(0, 3);
+  } catch(err){
+    // Restaurar UI
+    enviando = false;
+    progressWrap.style.display = 'none';
+    btn.disabled    = false;
+    btn.innerHTML   = '🚢 Confirmar Reserva';
 
-    if(err.message==='TIMEOUT_UPLOAD'){
-      alert('⏱️ La imagen tardó demasiado en subirse después de 3 intentos.\n\nComprueba tu conexión a internet e inténtalo de nuevo. Si el problema persiste, contacta con soporte.');
-    } else if(err.message==='TIMEOUT_RESPONSE'){
-      alert('⏳ La imagen se subió pero el servidor tardó en confirmar después de 3 intentos.\n\nEspera unos segundos y comprueba si recibiste la reserva antes de reintentar. Si ya fue procesada, no vuelvas a enviar.');
-    } else if(err.message==='ERROR_RED'){
-      alert('📡 Sin conexión a internet. Comprueba tu red e inténtalo de nuevo.');
-    } else if(err.message.startsWith('HTTP')){
-      alert('⚠️ Error del servidor ('+err.message+'). Inténtalo de nuevo en unos momentos.');
+    const msg = err.message || '';
+
+    if(msg === 'TIMEOUT_UPLOAD'){
+      alert(
+        '⚠️ La imagen tardó demasiado en subirse.\n\n' +
+        'Comprueba tu conexión a internet e inténtalo de nuevo. ' +
+        'Si el problema persiste, intenta con una imagen de menor tamaño.'
+      );
+    } else if(msg === 'TIMEOUT_RESPONSE'){
+      // La imagen llegó pero n8n tardó — probablemente se procesó igual
+      alert(
+        '⏳ La imagen se envió correctamente pero el servidor tardó en confirmar.\n\n' +
+        'Es muy posible que tu reserva ya esté registrada. ' +
+        'Espera unos segundos y revisa si recibiste mensaje antes de volver a intentarlo.'
+      );
+    } else if(msg === 'ERROR_CORS_O_RED' || msg === 'ERROR_RED'){
+      alert(
+        '📶 Sin conexión a internet.\n\n' +
+        'Comprueba tu red e inténtalo de nuevo.'
+      );
     } else {
-      alert('❌ Error al enviar ('+err.message+'). Inténtalo de nuevo.');
+      alert(
+        '❌ Error al enviar (' + msg + ').\n\n' +
+        'Inténtalo de nuevo en unos segundos.'
+      );
     }
-    console.error('Error final:', err);
+
+    console.error('Error de envío:', err);
   }
 }
 
+/* ─────────────────────────────────────────
+   VOLVER A WHATSAPP
+───────────────────────────────────────── */
 function volverWhatsApp(){
-  // Intentar cerrar la webview de Telegram si existe
   if(tg){ tg.close(); return; }
-  // Si el usuario tiene WhatsApp instalado, intentar abrir la app
-  try{
+  try {
     window.location.href = 'whatsapp://';
-    // Si no se abre en 1.5s, intentar con el esquema universal
-    setTimeout(()=>{ window.history.back(); }, 1500);
-  }catch(e){
+    setTimeout(() => window.history.back(), 1500);
+  } catch(e){
     window.history.back();
   }
 }
