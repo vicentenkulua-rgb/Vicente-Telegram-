@@ -251,13 +251,12 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 /* ══════════════════════════════════════════
    CONFIGURACIÓN GLOBAL
 ══════════════════════════════════════════ */
-const WEBHOOK_URL    = 'https://oveng.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
-const WEBHOOK_SESION = 'https://https://oveng.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
+const WEBHOOK_URL    = 'https://yo21.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
+const WEBHOOK_SESION = 'https://hijo50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
 const MAX_INTENTOS   = 3;
 // Pausa entre reintentos (ms): intento 2 espera 3s, intento 3 espera 6s
 const RETRY_DELAYS   = [0, 3000, 6000];
 const UPLOAD_TIMEOUT_MS   = 60000;  // 60s para subir el archivo
-const RESPONSE_TIMEOUT_MS = 120000; // 120s para que n8n procese y responda
 
 // Compresión adaptativa: 3 niveles según tamaño del archivo original
 const COMPRESS_LEVELS = [
@@ -457,7 +456,6 @@ function singleUpload(formData, labelExtra){
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let uploadTimer   = null;
-    let responseTimer = null;
     let settled       = false;
 
     const settle = (fn, val) => {
@@ -480,31 +478,24 @@ function singleUpload(formData, labelExtra){
       setProgress(pct, `Subiendo${labelExtra}… ${pct}%`);
     });
 
-    // Subida completa → activar timer de respuesta
+    // Subida completa → éxito inmediato, n8n procesa en segundo plano
     xhr.upload.addEventListener('load', () => {
       clearTimeout(uploadTimer);
       uploadTimer = null;
-      setProgress(99, 'Imagen enviada. Confirmando reserva…');
-      responseTimer = setTimeout(
-        () => { xhr.abort(); settle(reject, new Error('TIMEOUT_RESPONSE')); },
-        RESPONSE_TIMEOUT_MS
-      );
+      setProgress(100, '¡Reserva confirmada! ✅');
+      settle(resolve, 'UPLOAD_OK');
+      // XHR sigue su curso en background — n8n recibe y procesa normalmente
     });
 
     xhr.addEventListener('load', () => {
-      if(xhr.status >= 200 && xhr.status < 300){
-        setProgress(100, '¡Reserva confirmada! ✅');
-        settle(resolve, xhr.responseText);
-      } else if(xhr.status === 0){
-        // status 0 = error de red o CORS, NUNCA éxito
-        settle(reject, new Error('ERROR_RED'));
-      } else {
+      // Solo capturamos errores HTTP si aún no se resolvió con el upload
+      if(xhr.status !== 0 && (xhr.status < 200 || xhr.status >= 300)){
         settle(reject, new Error('HTTP_' + xhr.status));
       }
     });
 
     xhr.addEventListener('error', () => settle(reject, new Error('ERROR_RED')));
-    // abort: el timer ya emitió el rechazo, no hacer nada aquí
+    // abort: no hacer nada, el settle ya fue llamado
 
     xhr.open('POST', WEBHOOK_URL);
     xhr.send(formData);
@@ -600,8 +591,6 @@ async function enviar(){
     const msg = err?.message || '';
     if(msg === 'TIMEOUT_UPLOAD'){
       alert('⏱️ La imagen tardó demasiado en subirse tras ' + MAX_INTENTOS + ' intentos.\n\nComprueba tu conexión e inténtalo de nuevo, o usa una imagen más pequeña.');
-    } else if(msg === 'TIMEOUT_RESPONSE'){
-      alert('⏳ La imagen se envió pero el servidor tardó en confirmar.\n\nEs muy probable que tu reserva ya esté registrada. Espera unos segundos y revisa si recibiste mensaje antes de volver a intentarlo.');
     } else if(msg === 'ERROR_RED'){
       alert('📶 Sin conexión a internet.\n\nComprueba tu red e inténtalo de nuevo.');
     } else {
