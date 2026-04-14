@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ferry Viteoca</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
+:root{--red:#C8102E;--red-dark:#a00d24;--red-light:#e8143a;--green:#006B3F;--white:#ffffff;--gray:#f0f0f0;--text:#1a1a1a;--muted:#888;}
+.header{background:linear-gradient(135deg,#1a0008 0%,#C8102E 60%,#a00d24 100%);padding:20px 16px 16px;text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.06);border-radius:50%;}
+.header::after{content:'';position:absolute;bottom:-20px;left:-20px;width:80px;height:80px;background:rgba(0,107,63,0.3);border-radius:50%;}
+.ferry-name{font-size:32px;font-weight:900;color:#ff4d6d;letter-spacing:3px;text-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;z-index:1;}
+.ferry-sub{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-top:4px;position:relative;z-index:1;}
+.header-line{width:40px;height:2px;background:#006B3F;margin:10px auto 0;border-radius:2px;position:relative;z-index:1;}
+.body{padding:16px 14px 24px;}
+.sec-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.sec-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(200,16,46,0.2),transparent);}
+.destinos-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
+.dest-btn{border:2px solid #ddd;border-radius:14px;background:#fff;padding:12px 6px;text-align:center;cursor:pointer;transition:all 0.2s ease;position:relative;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
+.dest-btn .dest-name{font-size:13px;font-weight:700;color:var(--text);}
+.dest-btn .dest-country{font-size:10px;color:var(--muted);margin-top:2px;}
+.dest-btn.selected{border-color:var(--red);background:linear-gradient(135deg,#fff5f7,#ffe0e6);box-shadow:0 4px 14px rgba(200,16,46,0.25);transform:translateY(-2px);}
+.dest-btn.selected .dest-name{color:var(--red);}
+.dest-btn.selected::after{content:'✓';position:absolute;top:5px;right:7px;font-size:10px;font-weight:900;color:var(--red);}
+.precios-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
+.price-btn{border:2px solid #ddd;border-radius:14px;background:#fff;padding:12px 6px;text-align:center;cursor:pointer;transition:all 0.2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.06);position:relative;overflow:hidden;}
+.price-amount{font-size:15px;font-weight:900;color:var(--text);line-height:1;}
+.price-fcfa{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
+.price-type{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:6px;padding:3px 6px;border-radius:6px;display:inline-block;}
+.price-btn.eco .price-type{color:var(--green);background:rgba(0,107,63,0.08);}
+.price-btn.eco.selected{border-color:var(--green);background:linear-gradient(135deg,#f0fff7,#d4f5e5);box-shadow:0 4px 14px rgba(0,107,63,0.2);transform:translateY(-2px);}
+.price-btn.eco.selected .price-amount{color:var(--green);}
+.price-btn.biz .price-type{color:var(--red);background:rgba(200,16,46,0.08);}
+.price-btn.biz.selected{border-color:var(--red);background:linear-gradient(135deg,#fff5f7,#ffe0e6);box-shadow:0 4px 14px rgba(200,16,46,0.2);transform:translateY(-2px);}
+.price-btn.biz.selected .price-amount{color:var(--red);}
+.price-btn.vip .price-type{color:#b8860b;background:rgba(184,134,11,0.08);}
+.price-btn.vip.selected{border-color:#b8860b;background:linear-gradient(135deg,#fffdf0,#fef3c0);box-shadow:0 4px 14px rgba(184,134,11,0.2);transform:translateY(-2px);}
+.price-btn.vip.selected .price-amount{color:#b8860b;}
+.price-btn.selected::after{content:'✓';position:absolute;top:5px;right:7px;font-size:10px;font-weight:900;}
+.price-btn.eco.selected::after{color:var(--green);}
+.price-btn.biz.selected::after{color:var(--red);}
+.price-btn.vip.selected::after{color:#b8860b;}
+.upload-area{border:2px dashed rgba(200,16,46,0.25);border-radius:16px;background:#fff;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.upload-area:active{border-color:var(--red);background:#fff5f7;}
+.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-icon{font-size:34px;margin-bottom:8px;}
+.upload-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.upload-sub{font-size:12px;color:var(--muted);}
+.upload-formats{display:flex;justify-content:center;gap:6px;margin-top:10px;}
+.fmt{font-size:9px;letter-spacing:1px;text-transform:uppercase;background:#f0f0f0;border-radius:5px;padding:3px 7px;color:var(--muted);}
+#preview-box{display:none;border-radius:16px;overflow:hidden;margin-bottom:20px;position:relative;box-shadow:0 4px 16px rgba(0,0,0,0.1);}
+#preview-box img{width:100%;height:160px;object-fit:cover;display:block;}
+.preview-bar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);padding:12px;display:flex;align-items:center;justify-content:space-between;}
+.preview-info{display:flex;flex-direction:column;gap:2px;}
+.preview-bar span{font-size:12px;color:#fff;font-weight:600;}
+.preview-size{font-size:10px;color:rgba(255,255,255,0.65);}
+.change-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;}
+.submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--red-light),var(--red-dark));border:none;border-radius:16px;color:#fff;font-size:17px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(200,16,46,0.35);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
+.submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
+
+/* ── PROGRESS BAR ── */
+#progress-wrap{display:none;margin-bottom:16px;border-radius:12px;background:#fff;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
+#progress-label{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+#progress-label span{font-size:11px;color:var(--muted);font-weight:500;}
+#progress-track{width:100%;height:8px;background:#f0f0f0;border-radius:99px;overflow:hidden;}
+#progress-bar{height:100%;width:0%;background:linear-gradient(to right,var(--red-light),var(--red-dark));border-radius:99px;transition:width 0.4s ease;}
+#progress-status{font-size:11px;color:var(--muted);margin-top:6px;text-align:center;}
+
+/* ── RETRY BADGE ── */
+.retry-badge{display:inline-block;background:#ff9800;color:#fff;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700;margin-left:6px;letter-spacing:0.5px;}
+
+/* ── COMPRESSING OVERLAY ── */
+#compress-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+#compress-overlay.visible{display:flex;}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.compress-label{font-size:13px;color:#fff;font-weight:600;letter-spacing:1px;}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.header{animation:slideUp 0.3s ease both;}
+.body>*{animation:slideUp 0.3s ease both;}
+.body>*:nth-child(1){animation-delay:0.05s}
+.body>*:nth-child(2){animation-delay:0.1s}
+.body>*:nth-child(3){animation-delay:0.15s}
+.body>*:nth-child(4){animation-delay:0.2s}
+.body>*:nth-child(5){animation-delay:0.25s}
+.body>*:nth-child(6){animation-delay:0.3s}
+.body>*:nth-child(7){animation-delay:0.35s}
+
+/* ── SUCCESS SCREEN ── */
+#success-screen{display:none;position:fixed;inset:0;background:#f8f8f8;z-index:1000;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;}
+#success-screen.visible{display:flex;}
+@keyframes scaleIn{0%{opacity:0;transform:scale(0.4)}70%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.5);opacity:0}}
+.success-ring{position:relative;width:100px;height:100px;margin-bottom:28px;}
+.success-ring::before{content:'';position:absolute;inset:-10px;border-radius:50%;border:3px solid var(--green);animation:pulse-ring 1.8s ease-out 0.4s infinite;}
+.success-icon{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#00a86b,var(--green));display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 8px 28px rgba(0,107,63,0.35);animation:scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
+.success-title{font-size:24px;font-weight:900;color:#1a1a1a;letter-spacing:0.5px;margin-bottom:10px;animation:fadeUp 0.4s ease 0.3s both;}
+.success-subtitle{font-size:15px;color:#555;line-height:1.6;margin-bottom:28px;max-width:280px;animation:fadeUp 0.4s ease 0.45s both;}
+.success-divider{width:48px;height:3px;background:linear-gradient(to right,var(--red),var(--green));border-radius:99px;margin:0 auto 28px;animation:fadeUp 0.4s ease 0.5s both;}
+.success-card{background:#fff;border-radius:20px;padding:20px 24px;width:100%;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,0.08);margin-bottom:28px;animation:fadeUp 0.4s ease 0.55s both;}
+.success-card-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f0f0;}
+.success-card-row:last-child{border-bottom:none;}
+.success-card-icon{font-size:20px;width:32px;text-align:center;}
+.success-card-text{text-align:left;}
+.success-card-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.success-card-value{font-size:14px;font-weight:700;color:var(--text);margin-top:1px;}
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:340px;padding:16px 20px;background:linear-gradient(135deg,#25d366,#128c7e);border:none;border-radius:16px;color:#fff;font-size:16px;font-weight:800;letter-spacing:0.5px;cursor:pointer;box-shadow:0 6px 20px rgba(37,211,102,0.35);animation:fadeUp 0.4s ease 0.65s both;transition:transform 0.15s,box-shadow 0.15s;font-family:inherit;}
+.wa-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(37,211,102,0.25);}
+.wa-icon{font-size:22px;line-height:1;}
+.wa-btn-text{display:flex;flex-direction:column;align-items:flex-start;}
+.wa-btn-main{font-size:15px;font-weight:800;}
+.wa-btn-sub{font-size:11px;font-weight:500;opacity:0.85;margin-top:1px;}
+.success-footer{font-size:11px;color:#bbb;margin-top:20px;animation:fadeUp 0.4s ease 0.75s both;}
+</style>
+</head>
+<body>
+
+<!-- ── PANTALLA DE ÉXITO ── -->
+<div id="success-screen">
+  <div class="success-ring">
+    <div class="success-icon">✅</div>
+  </div>
+  <div class="success-title">¡Datos Enviados!</div>
+  <div class="success-divider"></div>
+  <div class="success-subtitle">Tu solicitud de reserva ha sido recibida correctamente. En breve nos pondremos en contacto contigo por WhatsApp.</div>
+  <div class="success-card">
+    <div class="success-card-row">
+      <div class="success-card-icon">🚢</div>
+      <div class="success-card-text">
+        <div class="success-card-label">Destino</div>
+        <div class="success-card-value" id="sc-destino">—</div>
+      </div>
+    </div>
+    <div class="success-card-row">
+      <div class="success-card-icon">🎫</div>
+      <div class="success-card-text">
+        <div class="success-card-label">Tarifa seleccionada</div>
+        <div class="success-card-value" id="sc-tarifa">—</div>
+      </div>
+    </div>
+    <div class="success-card-row">
+      <div class="success-card-icon">📋</div>
+      <div class="success-card-text">
+        <div class="success-card-label">Estado</div>
+        <div class="success-card-value" style="color:var(--green)">Reserva en proceso ✓</div>
+      </div>
+    </div>
+  </div>
+  <button class="wa-btn" onclick="volverWhatsApp()">
+    <div class="wa-icon">💬</div>
+    <div class="wa-btn-text">
+      <div class="wa-btn-main">Regresar a WhatsApp</div>
+      <div class="wa-btn-sub">Continuar la conversación</div>
+    </div>
+  </button>
+  <div class="success-footer">Ferry Viteoca · Reservas seguras</div>
+</div>
+
+<!-- Overlay compresión -->
+<div id="compress-overlay">
+  <div class="spinner"></div>
+  <div class="compress-label" id="compress-label-text">Optimizando imagen…</div>
+</div>
+
+<div class="header">
+  <div class="ferry-name">FERRY VITEOCA</div>
+  <div class="ferry-sub">Reserva tu billete</div>
+  <div class="header-line"></div>
+</div>
+
+<div class="body">
+
+  <div class="sec-label">Destino</div>
+  <div class="destinos-row">
+    <div class="dest-btn" onclick="selectDest(this,'Malabo')">
+      <div class="dest-name">Malabo</div>
+      <div class="dest-country">Bioko</div>
+    </div>
+    <div class="dest-btn" onclick="selectDest(this,'Bata')">
+      <div class="dest-name">Bata</div>
+      <div class="dest-country">Continente</div>
+    </div>
+    <div class="dest-btn" onclick="selectDest(this,'Annobón')">
+      <div class="dest-name">Annobón</div>
+      <div class="dest-country">Isla</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Tarifa</div>
+  <div class="precios-row">
+    <div class="price-btn eco" onclick="selectPrice(this,'35000','Económico')">
+      <div class="price-amount">35.000</div>
+      <div class="price-fcfa">FCFA</div>
+      <div class="price-type">Económico</div>
+    </div>
+    <div class="price-btn biz" onclick="selectPrice(this,'40000','Business')">
+      <div class="price-amount">40.000</div>
+      <div class="price-fcfa">FCFA</div>
+      <div class="price-type">Business</div>
+    </div>
+    <div class="price-btn vip" onclick="selectPrice(this,'50000','VIP')">
+      <div class="price-amount">50.000</div>
+      <div class="price-fcfa">FCFA</div>
+      <div class="price-type">VIP ★</div>
+    </div>
+  </div>
+
+  <div class="sec-label">Foto de Identidad</div>
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(this)">
+    <div class="upload-icon">🪪</div>
+    <div class="upload-title">Adjuntar documento</div>
+    <div class="upload-sub">Toca para hacer foto o seleccionar</div>
+    <div class="upload-formats">
+      <span class="fmt">JPG</span>
+      <span class="fmt">PNG</span>
+      <span class="fmt">PDF</span>
+    </div>
+  </div>
+
+  <div id="preview-box">
+    <img id="preview-img" src="" alt="DNI">
+    <div class="preview-bar">
+      <div class="preview-info">
+        <span>✅ Documento adjuntado</span>
+        <span class="preview-size" id="preview-size"></span>
+      </div>
+      <button class="change-btn" onclick="changePhoto()">Cambiar</button>
+    </div>
+  </div>
+
+  <div id="progress-wrap">
+    <div id="progress-label">Enviando reserva… <span id="progress-pct">0%</span><span id="retry-count"></span></div>
+    <div id="progress-track"><div id="progress-bar"></div></div>
+    <div id="progress-status">Preparando datos…</div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="enviar()">
+    🚢 Confirmar Reserva
+  </button>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   CONFIGURACIÓN GLOBAL
+══════════════════════════════════════════ */
+const WEBHOOK_URL    = 'https://yo21.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
+const WEBHOOK_SESION = 'https://hijo50.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
+const MAX_INTENTOS   = 3;
+// Pausa entre reintentos (ms): intento 2 espera 3s, intento 3 espera 6s
+const RETRY_DELAYS   = [0, 3000, 6000];
+const UPLOAD_TIMEOUT_MS   = 60000;  // 60s para subir el archivo
+const RESPONSE_TIMEOUT_MS = 120000; // 120s para que n8n procese y responda
+
+// Compresión adaptativa: 3 niveles según tamaño del archivo original
+const COMPRESS_LEVELS = [
+  { maxBytes: 500_000,   maxDim: 1200, quality: 0.85 }, // < 500 KB → suave
+  { maxBytes: 1_500_000, maxDim: 1000, quality: 0.78 }, // 500 KB–1.5 MB → media
+  { maxBytes: Infinity,  maxDim: 800,  quality: 0.70 }, // > 1.5 MB → agresiva
+];
+
+/* ══════════════════════════════════════════
+   TELEGRAM
+══════════════════════════════════════════ */
+const tg = window.Telegram?.WebApp;
+if(tg){ tg.ready(); tg.expand(); }
+
+/* ══════════════════════════════════════════
+   PARÁMETROS DE URL
+══════════════════════════════════════════ */
+const _p               = new URLSearchParams(window.location.search);
+const _codigoSesion    = _p.get('codigo')          || '';
+const _waPhone         = _p.get('phone')           || '';
+const _waName          = _p.get('name')            || '';
+const _waPhoneNumberId = _p.get('phone_number_id') || '';
+
+// Recuperar sesión en background — no bloquea la UI
+if(_codigoSesion){
+  fetch(WEBHOOK_SESION + '?codigo=' + encodeURIComponent(_codigoSesion), { method: 'POST' })
+    .then(r => r.json())
+    .then(d => console.log('Sesión:', d))
+    .catch(e => console.warn('Sesión no crítica:', e));
+}
+
+/* ══════════════════════════════════════════
+   ESTADO
+══════════════════════════════════════════ */
+let destino     = '';
+let precio      = '';
+let precioLabel = '';
+let fotoBlob    = null;
+let enviando    = false; // Bloquea doble envío
+
+/* ══════════════════════════════════════════
+   SELECCIÓN DE DESTINO Y TARIFA
+══════════════════════════════════════════ */
+function selectDest(el, val){
+  document.querySelectorAll('.dest-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  destino = val;
+}
+
+function selectPrice(el, val, label){
+  document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  precio      = val;
+  precioLabel = label;
+}
+
+/* ══════════════════════════════════════════
+   UTILIDADES
+══════════════════════════════════════════ */
+function formatBytes(b){
+  if(b < 1024)       return b + ' B';
+  if(b < 1_048_576)  return (b/1024).toFixed(1) + ' KB';
+  return (b/1_048_576).toFixed(1) + ' MB';
+}
+
+function setProgress(pct, status){
+  document.getElementById('progress-bar').style.width  = pct + '%';
+  document.getElementById('progress-pct').textContent  = pct + '%';
+  if(status) document.getElementById('progress-status').textContent = status;
+}
+
+function setRetryBadge(intento){
+  const el = document.getElementById('retry-count');
+  el.innerHTML = intento > 1
+    ? `<span class="retry-badge">Intento ${intento}/${MAX_INTENTOS}</span>`
+    : '';
+}
+
+/* ══════════════════════════════════════════
+   COMPRESIÓN ADAPTATIVA
+   Usa createImageBitmap si está disponible
+   (no bloquea el hilo de UI). Fallback a
+   Image + canvas para compatibilidad.
+══════════════════════════════════════════ */
+function getLevel(fileSize){
+  return COMPRESS_LEVELS.find(l => fileSize < l.maxBytes);
+}
+
+function bitmapToBlob(bitmap, level){
+  let w = bitmap.width, h = bitmap.height;
+  const max = level.maxDim;
+  if(w > max || h > max){
+    const r = Math.min(max/w, max/h);
+    w = Math.round(w*r); h = Math.round(h*r);
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+  return new Promise((res, rej) =>
+    canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob falló')), 'image/jpeg', level.quality)
+  );
+}
+
+function compressImage(file){
+  const level   = getLevel(file.size);
+  const overlay = document.getElementById('compress-overlay');
+  overlay.classList.add('visible');
+
+  const done = (blob) => { overlay.classList.remove('visible'); return blob; };
+  const fail = (err)  => { overlay.classList.remove('visible'); throw err; };
+
+  // Ruta rápida: createImageBitmap (no bloquea hilo principal)
+  if(typeof createImageBitmap !== 'undefined'){
+    return createImageBitmap(file)
+      .then(bm  => bitmapToBlob(bm, level))
+      .then(done).catch(() => {
+        // Si falla, usamos el fallback clásico
+        return fallbackCompress(file, level).then(done).catch(fail);
+      });
+  }
+  return fallbackCompress(file, level).then(done).catch(fail);
+}
+
+function fallbackCompress(file, level){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      bitmapToBlob(img, level).then(res).catch(rej);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Imagen ilegible')); };
+    img.src = url;
+  });
+}
+
+/* ══════════════════════════════════════════
+   MANEJO DE FOTO
+══════════════════════════════════════════ */
+async function handlePhoto(input){
+  const file = input.files[0];
+  if(!file) return;
+  try {
+    fotoBlob = file.type.startsWith('image/') ? await compressImage(file) : file;
+    document.getElementById('preview-img').src        = URL.createObjectURL(fotoBlob);
+    document.getElementById('preview-size').textContent = formatBytes(fotoBlob.size);
+    document.getElementById('uploadArea').style.display  = 'none';
+    document.getElementById('preview-box').style.display = 'block';
+  } catch(err){
+    alert('Error al procesar la imagen. Inténtalo de nuevo.');
+    console.error(err);
+  }
+}
+
+function changePhoto(){
+  fotoBlob = null;
+  document.getElementById('photoInput').value          = '';
+  document.getElementById('preview-box').style.display = 'none';
+  document.getElementById('uploadArea').style.display  = '';
+}
+
+/* ══════════════════════════════════════════
+   UPLOAD CON XHR — UN ÚNICO INTENTO
+   Devuelve Promise<string> con el texto de
+   respuesta, o rechaza con un Error cuyo
+   .message es uno de los códigos definidos.
+
+   CORRECCIONES vs versiones anteriores:
+   ① status===0 → error, NUNCA éxito
+   ② Bandera `settled` evita resolver/rechazar
+      dos veces si hay race entre timers y eventos
+   ③ Los timers se limpian en todos los caminos
+   ④ El evento `abort` no rechaza: el timer
+      que llamó a abort() ya lo hizo
+══════════════════════════════════════════ */
+function singleUpload(formData, labelExtra){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    let uploadTimer   = null;
+    let responseTimer = null;
+    let settled       = false;
+
+    const settle = (fn, val) => {
+      if(settled) return;
+      settled = true;
+      clearTimeout(uploadTimer);
+      clearTimeout(responseTimer);
+      fn(val);
+    };
+
+    // Timer de subida — arranca en .send()
+    uploadTimer = setTimeout(
+      () => settle(reject, new Error('TIMEOUT_UPLOAD')),
+      UPLOAD_TIMEOUT_MS
+    );
+
+    xhr.upload.addEventListener('progress', e => {
+      if(!e.lengthComputable) return;
+      const pct = Math.min(99, Math.round(e.loaded / e.total * 100));
+      setProgress(pct, `Subiendo${labelExtra}… ${pct}%`);
+    });
+
+    // Subida completa → activar timer de respuesta
+    xhr.upload.addEventListener('load', () => {
+      clearTimeout(uploadTimer);
+      uploadTimer = null;
+      setProgress(99, 'Imagen enviada. Confirmando reserva…');
+      responseTimer = setTimeout(
+        () => { xhr.abort(); settle(reject, new Error('TIMEOUT_RESPONSE')); },
+        RESPONSE_TIMEOUT_MS
+      );
+    });
+
+    xhr.addEventListener('load', () => {
+      if(xhr.status >= 200 && xhr.status < 300){
+        setProgress(100, '¡Reserva confirmada! ✅');
+        settle(resolve, xhr.responseText);
+      } else if(xhr.status === 0){
+        // status 0 = error de red o CORS, NUNCA éxito
+        settle(reject, new Error('ERROR_RED'));
+      } else {
+        settle(reject, new Error('HTTP_' + xhr.status));
+      }
+    });
+
+    xhr.addEventListener('error', () => settle(reject, new Error('ERROR_RED')));
+    // abort: el timer ya emitió el rechazo, no hacer nada aquí
+
+    xhr.open('POST', WEBHOOK_URL);
+    xhr.send(formData);
+  });
+}
+
+/* ══════════════════════════════════════════
+   REINTENTOS EN BUCLE LINEAL
+   (sin recursión anidada — evita condiciones
+   de carrera entre timers de intentos previos)
+══════════════════════════════════════════ */
+async function uploadConReintentos(formData){
+  let ultimoError;
+
+  for(let i = 0; i < MAX_INTENTOS; i++){
+    // Pausa antes del 2.º y 3.er intento
+    if(RETRY_DELAYS[i] > 0){
+      setProgress(0, `Reintentando en ${RETRY_DELAYS[i]/1000}s…`);
+      await new Promise(r => setTimeout(r, RETRY_DELAYS[i]));
+    }
+
+    const label = i > 0 ? ` (intento ${i+1}/${MAX_INTENTOS})` : '';
+    setRetryBadge(i + 1);
+
+    try {
+      return await singleUpload(formData, label);
+    } catch(err){
+      ultimoError = err;
+      console.warn(`Intento ${i+1} fallido:`, err.message);
+
+      // TIMEOUT_RESPONSE: la imagen llegó al servidor, n8n procesa.
+      // Reintentar enviaría el archivo DOS VECES → no reintentar.
+      if(err.message === 'TIMEOUT_RESPONSE') break;
+
+      // Error HTTP 4xx (ej. 400, 404): reintentar no cambiará el resultado
+      if(err.message.startsWith('HTTP_4')) break;
+    }
+  }
+
+  throw ultimoError;
+}
+
+/* ══════════════════════════════════════════
+   ENVIAR
+══════════════════════════════════════════ */
+async function enviar(){
+  if(enviando) return; // Bloquea doble tap
+
+  if(!destino)  { alert('Selecciona un destino');          return; }
+  if(!precio)   { alert('Selecciona una tarifa');          return; }
+  if(!fotoBlob) { alert('Adjunta tu foto de identidad');   return; }
+
+  const btn          = document.getElementById('submitBtn');
+  const progressWrap = document.getElementById('progress-wrap');
+
+  enviando = true;
+  btn.disabled    = true;
+  btn.textContent = 'Enviando…';
+  progressWrap.style.display = 'block';
+  setProgress(0, 'Preparando datos…');
+
+  const chatId   = tg?.initDataUnsafe?.user?.id       || '';
+  const username = tg?.initDataUnsafe?.user?.username || '';
+
+  const fd = new FormData();
+  fd.append('destino',            destino);
+  fd.append('precio',             precio);
+  fd.append('precio_label',       precioLabel);
+  fd.append('chat_id',            chatId);
+  fd.append('username',           username);
+  fd.append('wa_phone',           _waPhone);
+  fd.append('wa_name',            _waName);
+  fd.append('wa_phone_number_id', _waPhoneNumberId);
+  fd.append('foto', fotoBlob, 'documento.jpg');
+
+  try {
+    await uploadConReintentos(fd);
+
+    setTimeout(() => {
+      document.getElementById('sc-destino').textContent = destino;
+      document.getElementById('sc-tarifa').textContent  =
+        precioLabel + ' — ' + Number(precio).toLocaleString('es') + ' FCFA';
+      document.getElementById('success-screen').classList.add('visible');
+    }, 500);
+
+  } catch(err){
+    enviando = false;
+    progressWrap.style.display = 'none';
+    btn.disabled    = false;
+    btn.innerHTML   = '🚢 Confirmar Reserva';
+    setRetryBadge(0);
+
+    const msg = err?.message || '';
+    if(msg === 'TIMEOUT_UPLOAD'){
+      alert('⏱️ La imagen tardó demasiado en subirse tras ' + MAX_INTENTOS + ' intentos.\n\nComprueba tu conexión e inténtalo de nuevo, o usa una imagen más pequeña.');
+    } else if(msg === 'TIMEOUT_RESPONSE'){
+      alert('⏳ La imagen se envió pero el servidor tardó en confirmar.\n\nEs muy probable que tu reserva ya esté registrada. Espera unos segundos y revisa si recibiste mensaje antes de volver a intentarlo.');
+    } else if(msg === 'ERROR_RED'){
+      alert('📶 Sin conexión a internet.\n\nComprueba tu red e inténtalo de nuevo.');
+    } else {
+      alert('❌ Error al enviar (' + msg + ').\n\nInténtalo de nuevo en unos segundos.');
+    }
+    console.error('Error final tras reintentos:', err);
+  }
+}
+
+/* ══════════════════════════════════════════
+   VOLVER A WHATSAPP
+══════════════════════════════════════════ */
+function volverWhatsApp(){
+  if(tg){ tg.close(); return; }
+  try {
+    window.location.href = 'whatsapp://';
+    setTimeout(() => window.history.back(), 1500);
+  } catch(e){
+    window.history.back();
+  }
+}
+</script>
+</body>
+</html>
