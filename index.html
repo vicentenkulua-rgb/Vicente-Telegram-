@@ -62,6 +62,13 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
 .submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
 
+/* ── WARM INDICATOR ── */
+#warm-indicator{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-bottom:12px;padding:6px 10px;border-radius:8px;background:#fff;border:1px solid #eee;}
+#warm-dot{width:7px;height:7px;border-radius:50%;background:#f0a000;flex-shrink:0;transition:background 0.4s;}
+#warm-dot.caliente{background:#22c55e;}
+#warm-dot.frio{background:#ef4444;animation:parpadeo 1s ease-in-out infinite;}
+@keyframes parpadeo{0%,100%{opacity:1}50%{opacity:0.3}}
+
 /* ── PROGRESS BAR ── */
 #progress-wrap{display:none;margin-bottom:16px;border-radius:12px;background:#fff;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
 #progress-label{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
@@ -90,6 +97,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .body>*:nth-child(5){animation-delay:0.25s}
 .body>*:nth-child(6){animation-delay:0.3s}
 .body>*:nth-child(7){animation-delay:0.35s}
+.body>*:nth-child(8){animation-delay:0.4s}
 
 /* ── SUCCESS SCREEN ── */
 #success-screen{display:none;position:fixed;inset:0;background:#f8f8f8;z-index:1000;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;}
@@ -176,6 +184,12 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 
 <div class="body">
 
+  <!-- Indicador de estado del servidor -->
+  <div id="warm-indicator">
+    <div id="warm-dot"></div>
+    <span id="warm-text">Conectando con el servidor…</span>
+  </div>
+
   <div class="sec-label">Destino</div>
   <div class="destinos-row">
     <div class="dest-btn" onclick="selectDest(this,'Malabo')">
@@ -251,19 +265,16 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 /* ══════════════════════════════════════════
    CONFIGURACIÓN GLOBAL
 ══════════════════════════════════════════ */
-const WEBHOOK_URL    = 'https://oveng.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
-const WEBHOOK_SESION = 'https://oveng.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
-const MAX_INTENTOS   = 3;
-// Pausa entre reintentos (ms): intento 2 espera 3s, intento 3 espera 6s
-const RETRY_DELAYS   = [0, 3000, 6000];
-const UPLOAD_TIMEOUT_MS   = 60000;  // 60s para subir el archivo
-const RESPONSE_TIMEOUT_MS = 120000; // 120s para que n8n procese y responda
+const WEBHOOK_URL         = 'https://oveng.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
+const MAX_INTENTOS        = 3;
+const RETRY_DELAYS        = [0, 3000, 6000];
+const UPLOAD_TIMEOUT_MS   = 60000;
+const RESPONSE_TIMEOUT_MS = 120000;
 
-// Compresión adaptativa: 3 niveles según tamaño del archivo original
 const COMPRESS_LEVELS = [
-  { maxBytes: 500_000,   maxDim: 1200, quality: 0.85 }, // < 500 KB → suave
-  { maxBytes: 1_500_000, maxDim: 1000, quality: 0.78 }, // 500 KB–1.5 MB → media
-  { maxBytes: Infinity,  maxDim: 800,  quality: 0.70 }, // > 1.5 MB → agresiva
+  { maxBytes: 500_000,   maxDim: 1200, quality: 0.85 },
+  { maxBytes: 1_500_000, maxDim: 1000, quality: 0.78 },
+  { maxBytes: Infinity,  maxDim: 800,  quality: 0.70 },
 ];
 
 /* ══════════════════════════════════════════
@@ -281,30 +292,98 @@ const _waPhone         = _p.get('phone')           || '';
 const _waName          = _p.get('name')            || '';
 const _waPhoneNumberId = _p.get('phone_number_id') || '';
 
-// Recuperar sesión en background — no bloquea la UI
-if(_codigoSesion){
-  fetch(WEBHOOK_SESION + '?codigo=' + encodeURIComponent(_codigoSesion), { method: 'POST' })
-    .then(r => r.json())
-    .then(d => console.log('Sesión:', d))
-    .catch(e => console.warn('Sesión no crítica:', e));
-}
-
 /* ══════════════════════════════════════════
    ESTADO
 ══════════════════════════════════════════ */
-let destino     = '';
-let precio      = '';
-let precioLabel = '';
-let fotoBlob    = null;
-let enviando    = false; // Bloquea doble envío
+let destino        = '';
+let precio         = '';
+let precioLabel    = '';
+let fotoBlob       = null;
+let enviando       = false;
+
+/* ══════════════════════════════════════════
+   SISTEMA DE CALENTAMIENTO MULTI-CAPA
+
+   Capa 1 — ping HEAD inmediato al cargar
+   Capa 2 — ping GET a los 8s (refuerzo)
+   Capa 3 — keepalive cada 4 minutos
+   Capa 4 — ping al seleccionar destino/tarifa
+   Capa 5 — ping de guardia justo antes de enviar
+══════════════════════════════════════════ */
+let _servidorCaliente = false;
+let _keepaliveTimer   = null;
+
+function _setWarmUI(estado) {
+  // estado: 'esperando' | 'caliente' | 'frio'
+  const dot  = document.getElementById('warm-dot');
+  const text = document.getElementById('warm-text');
+  if(!dot || !text) return;
+  dot.className = '';
+  if(estado === 'caliente'){
+    dot.classList.add('caliente');
+    text.textContent = 'Servidor listo — envío rápido ✓';
+  } else if(estado === 'frio'){
+    dot.classList.add('frio');
+    text.textContent = 'Servidor ocupado, puede tardar un poco';
+  } else {
+    text.textContent = 'Conectando con el servidor…';
+  }
+}
+
+function _ping(motivo) {
+  const url = WEBHOOK_URL + '?warm=1&r=' + motivo + '&t=' + Date.now();
+
+  // Intentamos HEAD primero (mínimo payload)
+  fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(12000) })
+    .then(() => {
+      _servidorCaliente = true;
+      _setWarmUI('caliente');
+      console.log('[warm OK]', motivo);
+    })
+    .catch(() => {
+      // HEAD puede fallar por CORS en algunos servidores → fallback GET
+      fetch(url + '&m=get', { method: 'GET', signal: AbortSignal.timeout(12000) })
+        .then(() => {
+          _servidorCaliente = true;
+          _setWarmUI('caliente');
+          console.log('[warm OK via GET]', motivo);
+        })
+        .catch(() => {
+          // Si ambos fallan, marcamos como frío para que el usuario sepa
+          _setWarmUI('frio');
+          console.warn('[warm FAIL]', motivo);
+        });
+    });
+}
+
+function _iniciarCalentamiento() {
+  // Capa 1: inmediato al cargar
+  _ping('load');
+
+  // Capa 2: refuerzo a los 8s (por si n8n estaba arrancando)
+  setTimeout(() => {
+    if(!_servidorCaliente) _ping('load8');
+  }, 8000);
+
+  // Capa 3: keepalive cada 4 minutos
+  // n8n Cloud gratuito duerme tras ~5 min de inactividad
+  _keepaliveTimer = setInterval(() => {
+    _ping('keepalive');
+  }, 4 * 60 * 1000);
+}
+
+_iniciarCalentamiento();
 
 /* ══════════════════════════════════════════
    SELECCIÓN DE DESTINO Y TARIFA
+   (con ping de Capa 4 al interactuar)
 ══════════════════════════════════════════ */
 function selectDest(el, val){
   document.querySelectorAll('.dest-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   destino = val;
+  // Capa 4: el usuario interactúa → envío inminente
+  if(!_servidorCaliente) _ping('dest-tap');
 }
 
 function selectPrice(el, val, label){
@@ -312,20 +391,22 @@ function selectPrice(el, val, label){
   el.classList.add('selected');
   precio      = val;
   precioLabel = label;
+  // Capa 4: idem
+  if(!_servidorCaliente) _ping('price-tap');
 }
 
 /* ══════════════════════════════════════════
    UTILIDADES
 ══════════════════════════════════════════ */
 function formatBytes(b){
-  if(b < 1024)       return b + ' B';
-  if(b < 1_048_576)  return (b/1024).toFixed(1) + ' KB';
+  if(b < 1024)      return b + ' B';
+  if(b < 1_048_576) return (b/1024).toFixed(1) + ' KB';
   return (b/1_048_576).toFixed(1) + ' MB';
 }
 
 function setProgress(pct, status){
-  document.getElementById('progress-bar').style.width  = pct + '%';
-  document.getElementById('progress-pct').textContent  = pct + '%';
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
   if(status) document.getElementById('progress-status').textContent = status;
 }
 
@@ -338,9 +419,6 @@ function setRetryBadge(intento){
 
 /* ══════════════════════════════════════════
    COMPRESIÓN ADAPTATIVA
-   Usa createImageBitmap si está disponible
-   (no bloquea el hilo de UI). Fallback a
-   Image + canvas para compatibilidad.
 ══════════════════════════════════════════ */
 function getLevel(fileSize){
   return COMPRESS_LEVELS.find(l => fileSize < l.maxBytes);
@@ -369,14 +447,11 @@ function compressImage(file){
   const done = (blob) => { overlay.classList.remove('visible'); return blob; };
   const fail = (err)  => { overlay.classList.remove('visible'); throw err; };
 
-  // Ruta rápida: createImageBitmap (no bloquea hilo principal)
   if(typeof createImageBitmap !== 'undefined'){
     return createImageBitmap(file)
-      .then(bm  => bitmapToBlob(bm, level))
-      .then(done).catch(() => {
-        // Si falla, usamos el fallback clásico
-        return fallbackCompress(file, level).then(done).catch(fail);
-      });
+      .then(bm => bitmapToBlob(bm, level))
+      .then(done)
+      .catch(() => fallbackCompress(file, level).then(done).catch(fail));
   }
   return fallbackCompress(file, level).then(done).catch(fail);
 }
@@ -402,8 +477,8 @@ async function handlePhoto(input){
   if(!file) return;
   try {
     fotoBlob = file.type.startsWith('image/') ? await compressImage(file) : file;
-    document.getElementById('preview-img').src        = URL.createObjectURL(fotoBlob);
-    document.getElementById('preview-size').textContent = formatBytes(fotoBlob.size);
+    document.getElementById('preview-img').src           = URL.createObjectURL(fotoBlob);
+    document.getElementById('preview-size').textContent  = formatBytes(fotoBlob.size);
     document.getElementById('uploadArea').style.display  = 'none';
     document.getElementById('preview-box').style.display = 'block';
   } catch(err){
@@ -421,17 +496,6 @@ function changePhoto(){
 
 /* ══════════════════════════════════════════
    UPLOAD CON XHR — UN ÚNICO INTENTO
-   Devuelve Promise<string> con el texto de
-   respuesta, o rechaza con un Error cuyo
-   .message es uno de los códigos definidos.
-
-   CORRECCIONES vs versiones anteriores:
-   ① status===0 → error, NUNCA éxito
-   ② Bandera `settled` evita resolver/rechazar
-      dos veces si hay race entre timers y eventos
-   ③ Los timers se limpian en todos los caminos
-   ④ El evento `abort` no rechaza: el timer
-      que llamó a abort() ya lo hizo
 ══════════════════════════════════════════ */
 function singleUpload(formData, labelExtra){
   return new Promise((resolve, reject) => {
@@ -448,7 +512,6 @@ function singleUpload(formData, labelExtra){
       fn(val);
     };
 
-    // Timer de subida — arranca en .send()
     uploadTimer = setTimeout(
       () => settle(reject, new Error('TIMEOUT_UPLOAD')),
       UPLOAD_TIMEOUT_MS
@@ -460,11 +523,10 @@ function singleUpload(formData, labelExtra){
       setProgress(pct, `Subiendo${labelExtra}… ${pct}%`);
     });
 
-    // Subida completa → activar timer de respuesta
     xhr.upload.addEventListener('load', () => {
       clearTimeout(uploadTimer);
       uploadTimer = null;
-      setProgress(99, 'Imagen enviada. Confirmando reserva…');
+      setProgress(99, '📡 Imagen enviada. Servidor procesando…');
       responseTimer = setTimeout(
         () => { xhr.abort(); settle(reject, new Error('TIMEOUT_RESPONSE')); },
         RESPONSE_TIMEOUT_MS
@@ -476,7 +538,6 @@ function singleUpload(formData, labelExtra){
         setProgress(100, '¡Reserva confirmada! ✅');
         settle(resolve, xhr.responseText);
       } else if(xhr.status === 0){
-        // status 0 = error de red o CORS, NUNCA éxito
         settle(reject, new Error('ERROR_RED'));
       } else {
         settle(reject, new Error('HTTP_' + xhr.status));
@@ -484,7 +545,6 @@ function singleUpload(formData, labelExtra){
     });
 
     xhr.addEventListener('error', () => settle(reject, new Error('ERROR_RED')));
-    // abort: el timer ya emitió el rechazo, no hacer nada aquí
 
     xhr.open('POST', WEBHOOK_URL);
     xhr.send(formData);
@@ -493,14 +553,11 @@ function singleUpload(formData, labelExtra){
 
 /* ══════════════════════════════════════════
    REINTENTOS EN BUCLE LINEAL
-   (sin recursión anidada — evita condiciones
-   de carrera entre timers de intentos previos)
 ══════════════════════════════════════════ */
 async function uploadConReintentos(formData){
   let ultimoError;
 
   for(let i = 0; i < MAX_INTENTOS; i++){
-    // Pausa antes del 2.º y 3.er intento
     if(RETRY_DELAYS[i] > 0){
       setProgress(0, `Reintentando en ${RETRY_DELAYS[i]/1000}s…`);
       await new Promise(r => setTimeout(r, RETRY_DELAYS[i]));
@@ -514,12 +571,7 @@ async function uploadConReintentos(formData){
     } catch(err){
       ultimoError = err;
       console.warn(`Intento ${i+1} fallido:`, err.message);
-
-      // TIMEOUT_RESPONSE: la imagen llegó al servidor, n8n procesa.
-      // Reintentar enviaría el archivo DOS VECES → no reintentar.
       if(err.message === 'TIMEOUT_RESPONSE') break;
-
-      // Error HTTP 4xx (ej. 400, 404): reintentar no cambiará el resultado
       if(err.message.startsWith('HTTP_4')) break;
     }
   }
@@ -529,18 +581,28 @@ async function uploadConReintentos(formData){
 
 /* ══════════════════════════════════════════
    ENVIAR
+   (con Capa 5: ping de guardia preflight)
 ══════════════════════════════════════════ */
 async function enviar(){
-  if(enviando) return; // Bloquea doble tap
+  if(enviando) return;
 
-  if(!destino)  { alert('Selecciona un destino');          return; }
-  if(!precio)   { alert('Selecciona una tarifa');          return; }
-  if(!fotoBlob) { alert('Adjunta tu foto de identidad');   return; }
+  if(!destino)  { alert('Selecciona un destino');        return; }
+  if(!precio)   { alert('Selecciona una tarifa');        return; }
+  if(!fotoBlob) { alert('Adjunta tu foto de identidad'); return; }
+
+  // Capa 5: si el servidor aún no confirmó estar caliente,
+  // mandamos un último ping y esperamos 1.5s antes de enviar
+  if(!_servidorCaliente){
+    _ping('preflight');
+    setProgress(0, 'Preparando conexión con el servidor…');
+    document.getElementById('progress-wrap').style.display = 'block';
+    await new Promise(r => setTimeout(r, 1500));
+  }
 
   const btn          = document.getElementById('submitBtn');
   const progressWrap = document.getElementById('progress-wrap');
 
-  enviando = true;
+  enviando        = true;
   btn.disabled    = true;
   btn.textContent = 'Enviando…';
   progressWrap.style.display = 'block';
@@ -563,6 +625,9 @@ async function enviar(){
   try {
     await uploadConReintentos(fd);
 
+    // Detener keepalive al completar
+    clearInterval(_keepaliveTimer);
+
     setTimeout(() => {
       document.getElementById('sc-destino').textContent = destino;
       document.getElementById('sc-tarifa').textContent  =
@@ -573,8 +638,8 @@ async function enviar(){
   } catch(err){
     enviando = false;
     progressWrap.style.display = 'none';
-    btn.disabled    = false;
-    btn.innerHTML   = '🚢 Confirmar Reserva';
+    btn.disabled   = false;
+    btn.innerHTML  = '🚢 Confirmar Reserva';
     setRetryBadge(0);
 
     const msg = err?.message || '';
