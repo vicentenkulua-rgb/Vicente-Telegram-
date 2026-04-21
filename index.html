@@ -62,11 +62,12 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
 .submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
 
-/* ── CONECTIVITY INDICATOR ── */
-#conn-indicator{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-bottom:12px;padding:6px 10px;border-radius:8px;background:#fff;border:1px solid #eee;}
-#conn-dot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0;}
-#conn-dot.online{background:#22c55e;}
-#conn-dot.offline{background:#ef4444;}
+/* ── WARM INDICATOR ── */
+#warm-indicator{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-bottom:12px;padding:6px 10px;border-radius:8px;background:#fff;border:1px solid #eee;}
+#warm-dot{width:7px;height:7px;border-radius:50%;background:#f0a000;flex-shrink:0;transition:background 0.4s;}
+#warm-dot.caliente{background:#22c55e;}
+#warm-dot.frio{background:#ef4444;animation:parpadeo 1s ease-in-out infinite;}
+@keyframes parpadeo{0%,100%{opacity:1}50%{opacity:0.3}}
 
 /* ── PROGRESS BAR ── */
 #progress-wrap{display:none;margin-bottom:16px;border-radius:12px;background:#fff;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
@@ -118,7 +119,6 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .wa-btn-sub{font-size:11px;font-weight:500;opacity:0.85;margin-top:1px;}
 .success-footer{font-size:11px;color:#bbb;margin-top:20px;animation:fadeUp 0.4s ease 0.7s both;}
 </style>
-<base target="_blank">
 </head>
 <body>
 
@@ -154,10 +154,10 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 
 <div class="body">
 
-  <!-- Indicador de conectividad -->
-  <div id="conn-indicator">
-    <div id="conn-dot"></div>
-    <span id="conn-text">Verificando conexión…</span>
+  <!-- Indicador de estado del servidor -->
+  <div id="warm-indicator">
+    <div id="warm-dot"></div>
+    <span id="warm-text">Conectando con el servidor…</span>
   </div>
 
   <div class="sec-label">Destino</div>
@@ -204,7 +204,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
     <div class="upload-formats">
       <span class="fmt">JPG</span>
       <span class="fmt">PNG</span>
-      <span class="fmt">HEIC</span>
+      <span class="fmt">PDF</span>
     </div>
   </div>
 
@@ -237,10 +237,15 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 ══════════════════════════════════════════ */
 const WEBHOOK_URL         = 'https://oveng.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
 const MAX_INTENTOS        = 3;
-const TARGET_FILE_BYTES   = 250_000;   // ~250KB objetivo
-const MAX_IMAGE_DIMENSION = 1200;      // Máximo 1200px en el lado más largo
-const BASE_TIMEOUT_MS     = 30000;     // Mínimo 30s
-const MAX_TIMEOUT_MS      = 180000;    // Máximo 3min
+const RETRY_DELAYS        = [0, 3000, 6000];
+const UPLOAD_TIMEOUT_MS   = 60000;
+const RESPONSE_TIMEOUT_MS = 120000;
+
+const COMPRESS_LEVELS = [
+  { maxBytes: 500_000,   maxDim: 1200, quality: 0.85 },
+  { maxBytes: 1_500_000, maxDim: 1000, quality: 0.78 },
+  { maxBytes: Infinity,  maxDim: 800,  quality: 0.70 },
+];
 
 /* ══════════════════════════════════════════
    TELEGRAM
@@ -267,44 +272,63 @@ let fotoBlob       = null;
 let enviando       = false;
 
 /* ══════════════════════════════════════════
-   INDICADOR DE CONECTIVIDAD (simple, real)
+   SISTEMA DE CALENTAMIENTO MULTI-CAPA
+
+   Capa 1 — ping HEAD inmediato al cargar
+   Capa 2 — ping GET a los 8s (refuerzo)
+   Capa 3 — keepalive cada 4 minutos
+   Capa 4 — ping al seleccionar destino/tarifa
+   Capa 5 — ping de guardia justo antes de enviar
 ══════════════════════════════════════════ */
-function updateConnStatus(online) {
-  const dot  = document.getElementById('conn-dot');
-  const text = document.getElementById('conn-text');
+let _servidorCaliente = false;
+let _keepaliveTimer   = null;
+
+function _setWarmUI(estado) {
+  const dot  = document.getElementById('warm-dot');
+  const text = document.getElementById('warm-text');
   if(!dot || !text) return;
-  
-  if(online === true) {
-    dot.className = 'online';
-    text.textContent = 'Conexión estable';
-  } else if(online === false) {
-    dot.className = 'offline';
-    text.textContent = 'Sin conexión';
+  dot.className = '';
+  if(estado === 'caliente'){
+    dot.classList.add('caliente');
+    text.textContent = 'Servidor listo — envío rápido ✓';
+  } else if(estado === 'frio'){
+    dot.classList.add('frio');
+    text.textContent = 'Servidor ocupado, puede tardar un poco';
   } else {
-    dot.className = '';
-    text.textContent = 'Verificando conexión…';
+    text.textContent = 'Conectando con el servidor…';
   }
 }
 
-// Verificar conectividad real antes de enviar
-async function checkConnectivity() {
-  updateConnStatus(null);
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    await fetch(WEBHOOK_URL + '?ping=1&t=' + Date.now(), {
-      method: 'HEAD',
-      signal: controller.signal,
-      cache: 'no-store'
+function _ping(motivo) {
+  const url = WEBHOOK_URL + '?warm=1&r=' + motivo + '&t=' + Date.now();
+  fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(12000) })
+    .then(() => {
+      _servidorCaliente = true;
+      _setWarmUI('caliente');
+    })
+    .catch(() => {
+      fetch(url + '&m=get', { method: 'GET', signal: AbortSignal.timeout(12000) })
+        .then(() => {
+          _servidorCaliente = true;
+          _setWarmUI('caliente');
+        })
+        .catch(() => {
+          _setWarmUI('frio');
+        });
     });
-    clearTimeout(timeoutId);
-    updateConnStatus(true);
-    return true;
-  } catch {
-    updateConnStatus(false);
-    return false;
-  }
 }
+
+function _iniciarCalentamiento() {
+  _ping('load');
+  setTimeout(() => {
+    if(!_servidorCaliente) _ping('load8');
+  }, 8000);
+  _keepaliveTimer = setInterval(() => {
+    _ping('keepalive');
+  }, 4 * 60 * 1000);
+}
+
+_iniciarCalentamiento();
 
 /* ══════════════════════════════════════════
    SELECCIÓN DE DESTINO Y TARIFA
@@ -313,6 +337,7 @@ function selectDest(el, val){
   document.querySelectorAll('.dest-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   destino = val;
+  if(!_servidorCaliente) _ping('dest-tap');
 }
 
 function selectPrice(el, val, label){
@@ -320,6 +345,7 @@ function selectPrice(el, val, label){
   el.classList.add('selected');
   precio      = val;
   precioLabel = label;
+  if(!_servidorCaliente) _ping('price-tap');
 }
 
 /* ══════════════════════════════════════════
@@ -328,7 +354,7 @@ function selectPrice(el, val, label){
 function formatBytes(b){
   if(b < 1024)      return b + ' B';
   if(b < 1_048_576) return (b/1024).toFixed(1) + ' KB';
-  return (b/1_048_576).toFixed(2) + ' MB';
+  return (b/1_048_576).toFixed(1) + ' MB';
 }
 
 function setProgress(pct, status){
@@ -344,98 +370,56 @@ function setRetryBadge(intento){
     : '';
 }
 
-function getRetryDelay(attempt) {
-  const base = Math.min(1000 * Math.pow(2, attempt), 30000);
-  const jitter = Math.random() * 1000;
-  return base + jitter;
-}
-
-function getTimeoutForSize(bytes) {
-  const estimatedMs = (bytes / 1024) * 30;
-  return Math.max(BASE_TIMEOUT_MS, Math.min(estimatedMs, MAX_TIMEOUT_MS));
-}
-
 /* ══════════════════════════════════════════
-   COMPRESIÓN INTELIGENTE A OBJETIVO FIJO
-   Búsqueda binaria de calidad óptima
+   COMPRESIÓN ADAPTATIVA
 ══════════════════════════════════════════ */
-async function compressToTarget(file, targetBytes = TARGET_FILE_BYTES, maxDim = MAX_IMAGE_DIMENSION) {
-  const overlay = document.getElementById('compress-overlay');
-  const label   = document.getElementById('compress-label-text');
-  
-  overlay.classList.add('visible');
-  label.textContent = 'Analizando imagen…';
+function getLevel(fileSize){
+  return COMPRESS_LEVELS.find(l => fileSize < l.maxBytes);
+}
 
-  try {
-    // Si ya es JPEG pequeño, devolver tal cual
-    if (file.type === 'image/jpeg' && file.size <= targetBytes * 1.1) {
-      return file;
-    }
-
-    // Cargar imagen en bitmap
-    let bitmap;
-    if (typeof createImageBitmap !== 'undefined') {
-      bitmap = await createImageBitmap(file);
-    } else {
-      bitmap = await new Promise((res, rej) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        img.onload = () => { URL.revokeObjectURL(url); res(img); };
-        img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Imagen ilegible')); };
-        img.src = url;
-      });
-    }
-
-    // Redimensionar manteniendo ratio
-    let w = bitmap.width, h = bitmap.height;
-    const ratio = Math.min(maxDim / w, maxDim / h, 1);
-    w = Math.round(w * ratio);
-    h = Math.round(h * ratio);
-
-    label.textContent = `Redimensionando a ${w}×${h}…`;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0, w, h);
-
-    // Búsqueda binaria de calidad (6 iteraciones = ~1.4% precisión)
-    let minQ = 0.25, maxQ = 0.92;
-    let bestBlob = null;
-    let iterations = 0;
-
-    for (let i = 0; i < 7; i++) {
-      iterations++;
-      const quality = (minQ + maxQ) / 2;
-      label.textContent = `Optimizando… (${iterations}/7)`;
-      
-      const blob = await new Promise((res) => 
-        canvas.toBlob(res, 'image/jpeg', quality)
-      );
-      
-      if (!blob) continue;
-
-      if (blob.size <= targetBytes) {
-        bestBlob = blob;
-        minQ = quality; // Podemos subir calidad
-      } else {
-        maxQ = quality; // Hay que bajar calidad
-      }
-    }
-
-    if (!bestBlob) {
-      // Último recurso: calidad mínima
-      bestBlob = await new Promise((res) => 
-        canvas.toBlob(res, 'image/jpeg', 0.25)
-      );
-    }
-
-    return bestBlob;
-
-  } finally {
-    overlay.classList.remove('visible');
+function bitmapToBlob(bitmap, level){
+  let w = bitmap.width, h = bitmap.height;
+  const max = level.maxDim;
+  if(w > max || h > max){
+    const r = Math.min(max/w, max/h);
+    w = Math.round(w*r); h = Math.round(h*r);
   }
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+  return new Promise((res, rej) =>
+    canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob falló')), 'image/jpeg', level.quality)
+  );
+}
+
+function compressImage(file){
+  const level   = getLevel(file.size);
+  const overlay = document.getElementById('compress-overlay');
+  overlay.classList.add('visible');
+
+  const done = (blob) => { overlay.classList.remove('visible'); return blob; };
+  const fail = (err)  => { overlay.classList.remove('visible'); throw err; };
+
+  if(typeof createImageBitmap !== 'undefined'){
+    return createImageBitmap(file)
+      .then(bm => bitmapToBlob(bm, level))
+      .then(done)
+      .catch(() => fallbackCompress(file, level).then(done).catch(fail));
+  }
+  return fallbackCompress(file, level).then(done).catch(fail);
+}
+
+function fallbackCompress(file, level){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      bitmapToBlob(img, level).then(res).catch(rej);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Imagen ilegible')); };
+    img.src = url;
+  });
 }
 
 /* ══════════════════════════════════════════
@@ -444,46 +428,29 @@ async function compressToTarget(file, targetBytes = TARGET_FILE_BYTES, maxDim = 
 async function handlePhoto(input){
   const file = input.files[0];
   if(!file) return;
-
-  // Rechazar PDFs y archivos no-imagen
-  if (!file.type.startsWith('image/')) {
-    alert('Por favor selecciona una imagen (JPG, PNG, HEIC).\nLos PDFs no son compatibles.');
-    input.value = '';
-    return;
-  }
-
   try {
-    const originalSize = file.size;
-    fotoBlob = await compressToTarget(file, TARGET_FILE_BYTES, MAX_IMAGE_DIMENSION);
-    
-    const reduction = Math.max(0, Math.round((1 - fotoBlob.size / originalSize) * 100));
-    const sizeText = reduction > 5 
-      ? `${formatBytes(fotoBlob.size)} (reducido ${reduction}%)`
-      : formatBytes(fotoBlob.size);
-
-    document.getElementById('preview-img').src = URL.createObjectURL(fotoBlob);
-    document.getElementById('preview-size').textContent = sizeText;
-    document.getElementById('uploadArea').style.display = 'none';
+    fotoBlob = file.type.startsWith('image/') ? await compressImage(file) : file;
+    document.getElementById('preview-img').src           = URL.createObjectURL(fotoBlob);
+    document.getElementById('preview-size').textContent  = formatBytes(fotoBlob.size);
+    document.getElementById('uploadArea').style.display  = 'none';
     document.getElementById('preview-box').style.display = 'block';
-    
   } catch(err){
-    alert('Error al procesar la imagen. Inténtalo con otra foto.');
+    alert('Error al procesar la imagen. Inténtalo de nuevo.');
     console.error(err);
-    input.value = '';
   }
 }
 
 function changePhoto(){
   fotoBlob = null;
-  document.getElementById('photoInput').value = '';
+  document.getElementById('photoInput').value          = '';
   document.getElementById('preview-box').style.display = 'none';
-  document.getElementById('uploadArea').style.display = '';
+  document.getElementById('uploadArea').style.display  = '';
 }
 
 /* ══════════════════════════════════════════
-   UPLOAD CON XHR + TIMEOUT ADAPTATIVO
+   UPLOAD CON XHR — UN ÚNICO INTENTO
 ══════════════════════════════════════════ */
-function singleUpload(formData, labelExtra, timeoutMs){
+function singleUpload(formData, labelExtra){
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let uploadTimer   = null;
@@ -498,10 +465,9 @@ function singleUpload(formData, labelExtra, timeoutMs){
       fn(val);
     };
 
-    // Timeout adaptativo según tamaño
     uploadTimer = setTimeout(
       () => settle(reject, new Error('TIMEOUT_UPLOAD')),
-      timeoutMs
+      UPLOAD_TIMEOUT_MS
     );
 
     xhr.upload.addEventListener('progress', e => {
@@ -516,7 +482,7 @@ function singleUpload(formData, labelExtra, timeoutMs){
       setProgress(99, '📡 Imagen enviada. Servidor procesando…');
       responseTimer = setTimeout(
         () => { xhr.abort(); settle(reject, new Error('TIMEOUT_RESPONSE')); },
-        timeoutMs // Mismo timeout para respuesta
+        RESPONSE_TIMEOUT_MS
       );
     });
 
@@ -532,7 +498,6 @@ function singleUpload(formData, labelExtra, timeoutMs){
     });
 
     xhr.addEventListener('error', () => settle(reject, new Error('ERROR_RED')));
-    xhr.addEventListener('abort', () => settle(reject, new Error('ERROR_RED')));
 
     xhr.open('POST', WEBHOOK_URL);
     xhr.send(formData);
@@ -540,32 +505,27 @@ function singleUpload(formData, labelExtra, timeoutMs){
 }
 
 /* ══════════════════════════════════════════
-   REINTENTOS CON BACKOFF EXPONENCIAL
+   REINTENTOS EN BUCLE LINEAL
 ══════════════════════════════════════════ */
-async function uploadConReintentos(formData, fileSize){
-  const timeoutMs = getTimeoutForSize(fileSize);
+async function uploadConReintentos(formData){
   let ultimoError;
 
   for(let i = 0; i < MAX_INTENTOS; i++){
-    if(i > 0){
-      const delay = getRetryDelay(i - 1);
-      setProgress(0, `Reintentando en ${Math.round(delay/1000)}s…`);
-      await new Promise(r => setTimeout(r, delay));
+    if(RETRY_DELAYS[i] > 0){
+      setProgress(0, `Reintentando en ${RETRY_DELAYS[i]/1000}s…`);
+      await new Promise(r => setTimeout(r, RETRY_DELAYS[i]));
     }
 
     const label = i > 0 ? ` (intento ${i+1}/${MAX_INTENTOS})` : '';
     setRetryBadge(i + 1);
 
     try {
-      return await singleUpload(formData, label, timeoutMs);
+      return await singleUpload(formData, label);
     } catch(err){
       ultimoError = err;
       console.warn(`Intento ${i+1} fallido:`, err.message);
-      
-      // No reintentar errores del cliente (4xx)
-      if(err.message.startsWith('HTTP_4')) break;
-      // No reintentar si el servidor ya recibió la imagen pero no respondió
       if(err.message === 'TIMEOUT_RESPONSE') break;
+      if(err.message.startsWith('HTTP_4')) break;
     }
   }
 
@@ -582,11 +542,11 @@ async function enviar(){
   if(!precio)   { alert('Selecciona una tarifa');        return; }
   if(!fotoBlob) { alert('Adjunta tu foto de identidad'); return; }
 
-  // Verificar conectividad antes de enviar
-  const isOnline = await checkConnectivity();
-  if(!isOnline){
-    const continuar = confirm('📶 Parece que no tienes conexión estable.\n\n¿Quieres intentar enviar de todos modos?');
-    if(!continuar) return;
+  if(!_servidorCaliente){
+    _ping('preflight');
+    setProgress(0, 'Preparando conexión con el servidor…');
+    document.getElementById('progress-wrap').style.display = 'block';
+    await new Promise(r => setTimeout(r, 1500));
   }
 
   const btn          = document.getElementById('submitBtn');
@@ -613,7 +573,9 @@ async function enviar(){
   fd.append('foto', fotoBlob, 'documento.jpg');
 
   try {
-    await uploadConReintentos(fd, fotoBlob.size);
+    await uploadConReintentos(fd);
+
+    clearInterval(_keepaliveTimer);
 
     setTimeout(() => {
       document.getElementById('success-screen').classList.add('visible');
@@ -636,7 +598,7 @@ async function enviar(){
     } else {
       alert('❌ Error al enviar (' + msg + ').\n\nInténtalo de nuevo en unos segundos.');
     }
-    console.error('Error final:', err);
+    console.error('Error final tras reintentos:', err);
   }
 }
 
@@ -652,9 +614,6 @@ function volverWhatsApp(){
     window.history.back();
   }
 }
-
-// Verificar conectividad al cargar la página
-checkConnectivity();
 </script>
 </body>
 </html>
