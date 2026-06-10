@@ -3,6 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="referrer" content="no-referrer">
+<!--
+  Content-Security-Policy: limita de dónde se pueden cargar recursos y a dónde
+  se puede conectar la página. Cierra la puerta a inyección de scripts externos.
+  Nota: script-src incluye 'unsafe-inline' porque el JS va embebido en este
+  mismo archivo. Si más adelante mueves el JS a un archivo externo (app.js),
+  puedes quitar 'unsafe-inline' y usar solo 'self' para mayor seguridad.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src 'self' https://telegram.org 'unsafe-inline';
+  style-src 'unsafe-inline';
+  img-src 'self' blob: data:;
+  connect-src https://oveng5.app.n8n.cloud;
+  base-uri 'none';
+  form-action 'none';
+  frame-ancestors 'self' https://web.telegram.org https://*.telegram.org;
+">
 <title>Ferry Viteoca</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -62,13 +80,13 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(200,16,46,0.3);}
 .submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
 
-/* ── CONECTIVITY INDICATOR ── */
+/* ── INDICADOR DE CONECTIVIDAD ── */
 #conn-indicator{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-bottom:12px;padding:6px 10px;border-radius:8px;background:#fff;border:1px solid #eee;}
 #conn-dot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0;}
 #conn-dot.online{background:#22c55e;}
 #conn-dot.offline{background:#ef4444;}
 
-/* ── PROGRESS BAR ── */
+/* ── BARRA DE PROGRESO ── */
 #progress-wrap{display:none;margin-bottom:16px;border-radius:12px;background:#fff;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
 #progress-label{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
 #progress-label span{font-size:11px;color:var(--muted);font-weight:500;}
@@ -76,10 +94,10 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 #progress-bar{height:100%;width:0%;background:linear-gradient(to right,var(--red-light),var(--red-dark));border-radius:99px;transition:width 0.4s ease;}
 #progress-status{font-size:11px;color:var(--muted);margin-top:6px;text-align:center;}
 
-/* ── RETRY BADGE ── */
+/* ── INSIGNIA DE REINTENTO ── */
 .retry-badge{display:inline-block;background:#ff9800;color:#fff;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700;margin-left:6px;letter-spacing:0.5px;}
 
-/* ── COMPRESSING OVERLAY ── */
+/* ── OVERLAY COMPRESIÓN ── */
 #compress-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
 #compress-overlay.visible{display:flex;}
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
@@ -98,7 +116,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .body>*:nth-child(7){animation-delay:0.35s}
 .body>*:nth-child(8){animation-delay:0.4s}
 
-/* ── SUCCESS SCREEN ── */
+/* ── PANTALLA DE ÉXITO ── */
 #success-screen{display:none;position:fixed;inset:0;background:#f8f8f8;z-index:1000;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;}
 #success-screen.visible{display:flex;}
 @keyframes scaleIn{0%{opacity:0;transform:scale(0.4)}70%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
@@ -118,7 +136,6 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .wa-btn-sub{font-size:11px;font-weight:500;opacity:0.85;margin-top:1px;}
 .success-footer{font-size:11px;color:#bbb;margin-top:20px;animation:fadeUp 0.4s ease 0.7s both;}
 </style>
-<base target="_blank">
 </head>
 <body>
 
@@ -130,7 +147,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
   <div class="success-title">Datos registrados correctamente</div>
   <div class="success-divider"></div>
   <div class="success-subtitle">Tu solicitud ha sido enviada con éxito. Nos pondremos en contacto contigo en breve a través de WhatsApp para confirmar tu reserva.</div>
-  <button class="wa-btn" onclick="volverWhatsApp()">
+  <button class="wa-btn" id="waBtn" type="button">
     <div class="wa-icon">💬</div>
     <div class="wa-btn-text">
       <div class="wa-btn-main">Regresar a WhatsApp</div>
@@ -161,34 +178,34 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
   </div>
 
   <div class="sec-label">Destino</div>
-  <div class="destinos-row">
-    <div class="dest-btn" onclick="selectDest(this,'Malabo')">
+  <div class="destinos-row" id="destinos">
+    <div class="dest-btn" data-dest="Malabo" role="button" tabindex="0">
       <div class="dest-name">Malabo</div>
       <div class="dest-country">Bioko</div>
     </div>
-    <div class="dest-btn" onclick="selectDest(this,'Bata')">
+    <div class="dest-btn" data-dest="Bata" role="button" tabindex="0">
       <div class="dest-name">Bata</div>
       <div class="dest-country">Continente</div>
     </div>
-    <div class="dest-btn" onclick="selectDest(this,'Annobón')">
+    <div class="dest-btn" data-dest="Annobón" role="button" tabindex="0">
       <div class="dest-name">Annobón</div>
       <div class="dest-country">Isla</div>
     </div>
   </div>
 
   <div class="sec-label">Tarifa</div>
-  <div class="precios-row">
-    <div class="price-btn eco" onclick="selectPrice(this,'35000','Económico')">
+  <div class="precios-row" id="precios">
+    <div class="price-btn eco" data-precio="35000" data-label="Económico" role="button" tabindex="0">
       <div class="price-amount">35.000</div>
       <div class="price-fcfa">FCFA</div>
       <div class="price-type">Económico</div>
     </div>
-    <div class="price-btn biz" onclick="selectPrice(this,'40000','Business')">
+    <div class="price-btn biz" data-precio="40000" data-label="Business" role="button" tabindex="0">
       <div class="price-amount">40.000</div>
       <div class="price-fcfa">FCFA</div>
       <div class="price-type">Business</div>
     </div>
-    <div class="price-btn vip" onclick="selectPrice(this,'50000','VIP')">
+    <div class="price-btn vip" data-precio="50000" data-label="VIP" role="button" tabindex="0">
       <div class="price-amount">50.000</div>
       <div class="price-fcfa">FCFA</div>
       <div class="price-type">VIP ★</div>
@@ -197,7 +214,7 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 
   <div class="sec-label">Foto de Identidad</div>
   <div class="upload-area" id="uploadArea">
-    <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(this)">
+    <input type="file" id="photoInput" accept="image/jpeg,image/png,image/heic,image/heif,image/webp">
     <div class="upload-icon">🪪</div>
     <div class="upload-title">Adjuntar documento</div>
     <div class="upload-sub">Toca para hacer foto o seleccionar</div>
@@ -209,13 +226,13 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
   </div>
 
   <div id="preview-box">
-    <img id="preview-img" src="" alt="DNI">
+    <img id="preview-img" src="" alt="Documento de identidad">
     <div class="preview-bar">
       <div class="preview-info">
         <span>✅ Documento adjuntado</span>
         <span class="preview-size" id="preview-size"></span>
       </div>
-      <button class="change-btn" onclick="changePhoto()">Cambiar</button>
+      <button class="change-btn" id="changeBtn" type="button">Cambiar</button>
     </div>
   </div>
 
@@ -225,59 +242,77 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
     <div id="progress-status">Preparando datos…</div>
   </div>
 
-  <button class="submit-btn" id="submitBtn" onclick="enviar()">
+  <button class="submit-btn" id="submitBtn" type="button">
     🚢 Confirmar Reserva
   </button>
 
 </div>
 
 <script>
+"use strict";
 /* ══════════════════════════════════════════
    CONFIGURACIÓN GLOBAL
 ══════════════════════════════════════════ */
 const WEBHOOK_URL         = 'https://oveng5.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
 const MAX_INTENTOS        = 3;
-const TARGET_FILE_BYTES   = 250_000;   // ~250KB objetivo
-const MAX_IMAGE_DIMENSION = 1200;      // Máximo 1200px en el lado más largo
-const BASE_TIMEOUT_MS     = 30000;     // Mínimo 30s
-const MAX_TIMEOUT_MS      = 180000;    // Máximo 3min
+const TARGET_FILE_BYTES   = 250000;     // ~250KB objetivo
+const MAX_IMAGE_DIMENSION = 1200;       // Máximo 1200px en el lado más largo
+const MAX_INPUT_BYTES     = 25 * 1024 * 1024; // Rechazar archivos de origen > 25MB
+const BASE_TIMEOUT_MS     = 30000;      // Mínimo 30s
+const MAX_TIMEOUT_MS      = 180000;     // Máximo 3min
+
+// Listas blancas: el cliente NO es de fiar, pero esto evita enviar basura
+// accidental. La validación REAL debe hacerse en n8n (ver notas de seguridad).
+const DESTINOS_VALIDOS = ['Malabo', 'Bata', 'Annobón'];
+const PRECIOS_VALIDOS  = ['35000', '40000', '50000'];
 
 /* ══════════════════════════════════════════
    TELEGRAM
 ══════════════════════════════════════════ */
-const tg = window.Telegram?.WebApp;
-if(tg){ tg.ready(); tg.expand(); }
+const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
 /* ══════════════════════════════════════════
-   PARÁMETROS DE URL
+   SANITIZACIÓN DE PARÁMETROS DE URL
+   No se inyectan en el DOM, pero se limpian por defensa en profundidad
+   (longitud acotada y sin caracteres de control).
 ══════════════════════════════════════════ */
+function cleanParam(value, maxLen) {
+  if (!value) return '';
+  // Quita caracteres de control y recorta longitud
+  return String(value).replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, maxLen || 128);
+}
+
 const _p               = new URLSearchParams(window.location.search);
-const _codigoSesion    = _p.get('codigo')          || '';
-const _waPhone         = _p.get('phone')           || '';
-const _waName          = _p.get('name')            || '';
-const _waPhoneNumberId = _p.get('phone_number_id') || '';
+const _codigoSesion    = cleanParam(_p.get('codigo'), 64);
+const _waPhone         = cleanParam(_p.get('phone'), 32);
+const _waName          = cleanParam(_p.get('name'), 80);
+const _waPhoneNumberId = cleanParam(_p.get('phone_number_id'), 32);
 
 /* ══════════════════════════════════════════
    ESTADO
 ══════════════════════════════════════════ */
-let destino        = '';
-let precio         = '';
-let precioLabel    = '';
-let fotoBlob       = null;
-let enviando       = false;
+let destino     = '';
+let precio      = '';
+let precioLabel = '';
+let fotoBlob    = null;
+let enviando    = false;
 
 /* ══════════════════════════════════════════
-   INDICADOR DE CONECTIVIDAD (simple, real)
+   INDICADOR DE CONECTIVIDAD
+   Usa navigator.onLine + eventos online/offline.
+   (Se eliminó el "ping" HEAD al webhook: por CORS solía fallar y dar
+   falsos "Sin conexión", además de añadir 5s de espera antes de enviar.)
 ══════════════════════════════════════════ */
 function updateConnStatus(online) {
   const dot  = document.getElementById('conn-dot');
   const text = document.getElementById('conn-text');
-  if(!dot || !text) return;
-  
-  if(online === true) {
+  if (!dot || !text) return;
+
+  if (online === true) {
     dot.className = 'online';
-    text.textContent = 'Conexión estable';
-  } else if(online === false) {
+    text.textContent = 'Conexión disponible';
+  } else if (online === false) {
     dot.className = 'offline';
     text.textContent = 'Sin conexión';
   } else {
@@ -286,36 +321,22 @@ function updateConnStatus(online) {
   }
 }
 
-// Verificar conectividad real antes de enviar
-async function checkConnectivity() {
-  updateConnStatus(null);
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    await fetch(WEBHOOK_URL + '?ping=1&t=' + Date.now(), {
-      method: 'HEAD',
-      signal: controller.signal,
-      cache: 'no-store'
-    });
-    clearTimeout(timeoutId);
-    updateConnStatus(true);
-    return true;
-  } catch {
-    updateConnStatus(false);
-    return false;
-  }
-}
+function refreshConn() { updateConnStatus(navigator.onLine); }
+window.addEventListener('online',  refreshConn);
+window.addEventListener('offline', refreshConn);
 
 /* ══════════════════════════════════════════
    SELECCIÓN DE DESTINO Y TARIFA
 ══════════════════════════════════════════ */
-function selectDest(el, val){
+function selectDest(el, val) {
+  if (DESTINOS_VALIDOS.indexOf(val) === -1) return;
   document.querySelectorAll('.dest-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   destino = val;
 }
 
-function selectPrice(el, val, label){
+function selectPrice(el, val, label) {
+  if (PRECIOS_VALIDOS.indexOf(val) === -1) return;
   document.querySelectorAll('.price-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
   precio      = val;
@@ -325,23 +346,27 @@ function selectPrice(el, val, label){
 /* ══════════════════════════════════════════
    UTILIDADES
 ══════════════════════════════════════════ */
-function formatBytes(b){
-  if(b < 1024)      return b + ' B';
-  if(b < 1_048_576) return (b/1024).toFixed(1) + ' KB';
-  return (b/1_048_576).toFixed(2) + ' MB';
+function formatBytes(b) {
+  if (b < 1024)    return b + ' B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(2) + ' MB';
 }
 
-function setProgress(pct, status){
+function setProgress(pct, status) {
   document.getElementById('progress-bar').style.width = pct + '%';
   document.getElementById('progress-pct').textContent = pct + '%';
-  if(status) document.getElementById('progress-status').textContent = status;
+  if (status) document.getElementById('progress-status').textContent = status;
 }
 
-function setRetryBadge(intento){
+function setRetryBadge(intento) {
   const el = document.getElementById('retry-count');
-  el.innerHTML = intento > 1
-    ? `<span class="retry-badge">Intento ${intento}/${MAX_INTENTOS}</span>`
-    : '';
+  el.textContent = '';
+  if (intento > 1) {
+    const badge = document.createElement('span');
+    badge.className = 'retry-badge';
+    badge.textContent = 'Intento ' + intento + '/' + MAX_INTENTOS;
+    el.appendChild(badge);
+  }
 }
 
 function getRetryDelay(attempt) {
@@ -357,14 +382,20 @@ function getTimeoutForSize(bytes) {
 
 /* ══════════════════════════════════════════
    COMPRESIÓN INTELIGENTE A OBJETIVO FIJO
-   Búsqueda binaria de calidad óptima
+   Búsqueda binaria de calidad óptima.
 ══════════════════════════════════════════ */
-async function compressToTarget(file, targetBytes = TARGET_FILE_BYTES, maxDim = MAX_IMAGE_DIMENSION) {
+async function compressToTarget(file, targetBytes, maxDim) {
+  targetBytes = targetBytes || TARGET_FILE_BYTES;
+  maxDim = maxDim || MAX_IMAGE_DIMENSION;
+
   const overlay = document.getElementById('compress-overlay');
   const label   = document.getElementById('compress-label-text');
-  
+
   overlay.classList.add('visible');
   label.textContent = 'Analizando imagen…';
+
+  let bitmap = null;
+  let objectUrl = null;
 
   try {
     // Si ya es JPEG pequeño, devolver tal cual
@@ -372,68 +403,66 @@ async function compressToTarget(file, targetBytes = TARGET_FILE_BYTES, maxDim = 
       return file;
     }
 
-    // Cargar imagen en bitmap
-    let bitmap;
+    // Cargar imagen
     if (typeof createImageBitmap !== 'undefined') {
       bitmap = await createImageBitmap(file);
     } else {
       bitmap = await new Promise((res, rej) => {
         const img = new Image();
-        const url = URL.createObjectURL(file);
-        img.onload = () => { URL.revokeObjectURL(url); res(img); };
-        img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Imagen ilegible')); };
-        img.src = url;
+        objectUrl = URL.createObjectURL(file);
+        img.onload  = () => res(img);
+        img.onerror = () => rej(new Error('Imagen ilegible'));
+        img.src = objectUrl;
       });
     }
 
     // Redimensionar manteniendo ratio
     let w = bitmap.width, h = bitmap.height;
+    if (!w || !h) throw new Error('Dimensiones inválidas');
     const ratio = Math.min(maxDim / w, maxDim / h, 1);
     w = Math.round(w * ratio);
     h = Math.round(h * ratio);
 
-    label.textContent = `Redimensionando a ${w}×${h}…`;
+    label.textContent = 'Redimensionando a ' + w + '×' + h + '…';
 
     const canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas no disponible');
     ctx.drawImage(bitmap, 0, 0, w, h);
 
-    // Búsqueda binaria de calidad (6 iteraciones = ~1.4% precisión)
+    // Búsqueda binaria de calidad (7 iteraciones)
     let minQ = 0.25, maxQ = 0.92;
     let bestBlob = null;
-    let iterations = 0;
 
     for (let i = 0; i < 7; i++) {
-      iterations++;
       const quality = (minQ + maxQ) / 2;
-      label.textContent = `Optimizando… (${iterations}/7)`;
-      
-      const blob = await new Promise((res) => 
-        canvas.toBlob(res, 'image/jpeg', quality)
-      );
-      
+      label.textContent = 'Optimizando… (' + (i + 1) + '/7)';
+
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
       if (!blob) continue;
 
       if (blob.size <= targetBytes) {
         bestBlob = blob;
-        minQ = quality; // Podemos subir calidad
+        minQ = quality; // podemos subir calidad
       } else {
-        maxQ = quality; // Hay que bajar calidad
+        maxQ = quality; // hay que bajar calidad
       }
     }
 
     if (!bestBlob) {
-      // Último recurso: calidad mínima
-      bestBlob = await new Promise((res) => 
-        canvas.toBlob(res, 'image/jpeg', 0.25)
-      );
+      bestBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.25));
     }
+    if (!bestBlob) throw new Error('No se pudo comprimir');
 
     return bestBlob;
 
   } finally {
+    if (bitmap && typeof bitmap.close === 'function') {
+      try { bitmap.close(); } catch (e) {}
+    }
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
     overlay.classList.remove('visible');
   }
 }
@@ -441,13 +470,22 @@ async function compressToTarget(file, targetBytes = TARGET_FILE_BYTES, maxDim = 
 /* ══════════════════════════════════════════
    MANEJO DE FOTO
 ══════════════════════════════════════════ */
-async function handlePhoto(input){
-  const file = input.files[0];
-  if(!file) return;
+let previewObjectUrl = null;
 
-  // Rechazar PDFs y archivos no-imagen
-  if (!file.type.startsWith('image/')) {
-    alert('Por favor selecciona una imagen (JPG, PNG, HEIC).\nLos PDFs no son compatibles.');
+async function handlePhoto(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  // Solo imágenes
+  if (!file.type || !file.type.startsWith('image/')) {
+    alert('Por favor selecciona una imagen (JPG, PNG, HEIC).\nLos PDF y otros archivos no son compatibles.');
+    input.value = '';
+    return;
+  }
+
+  // Rechazar archivos demasiado grandes (evita esperas larguísimas / cuelgues de memoria)
+  if (file.size > MAX_INPUT_BYTES) {
+    alert('La imagen es demasiado grande (' + formatBytes(file.size) + ').\nUsa una foto de menos de 25 MB.');
     input.value = '';
     return;
   }
@@ -455,26 +493,31 @@ async function handlePhoto(input){
   try {
     const originalSize = file.size;
     fotoBlob = await compressToTarget(file, TARGET_FILE_BYTES, MAX_IMAGE_DIMENSION);
-    
+
     const reduction = Math.max(0, Math.round((1 - fotoBlob.size / originalSize) * 100));
-    const sizeText = reduction > 5 
-      ? `${formatBytes(fotoBlob.size)} (reducido ${reduction}%)`
+    const sizeText = reduction > 5
+      ? formatBytes(fotoBlob.size) + ' (reducido ' + reduction + '%)'
       : formatBytes(fotoBlob.size);
 
-    document.getElementById('preview-img').src = URL.createObjectURL(fotoBlob);
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = URL.createObjectURL(fotoBlob);
+
+    document.getElementById('preview-img').src = previewObjectUrl;
     document.getElementById('preview-size').textContent = sizeText;
     document.getElementById('uploadArea').style.display = 'none';
     document.getElementById('preview-box').style.display = 'block';
-    
-  } catch(err){
-    alert('Error al procesar la imagen. Inténtalo con otra foto.');
+
+  } catch (err) {
+    fotoBlob = null;
+    alert('Error al procesar la imagen. Inténtalo con otra foto (por ejemplo en formato JPG o PNG).');
     console.error(err);
     input.value = '';
   }
 }
 
-function changePhoto(){
+function changePhoto() {
   fotoBlob = null;
+  if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
   document.getElementById('photoInput').value = '';
   document.getElementById('preview-box').style.display = 'none';
   document.getElementById('uploadArea').style.display = '';
@@ -483,7 +526,7 @@ function changePhoto(){
 /* ══════════════════════════════════════════
    UPLOAD CON XHR + TIMEOUT ADAPTATIVO
 ══════════════════════════════════════════ */
-function singleUpload(formData, labelExtra, timeoutMs){
+function singleUpload(formData, labelExtra, timeoutMs) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let uploadTimer   = null;
@@ -491,40 +534,39 @@ function singleUpload(formData, labelExtra, timeoutMs){
     let settled       = false;
 
     const settle = (fn, val) => {
-      if(settled) return;
+      if (settled) return;
       settled = true;
       clearTimeout(uploadTimer);
       clearTimeout(responseTimer);
       fn(val);
     };
 
-    // Timeout adaptativo según tamaño
-    uploadTimer = setTimeout(
-      () => settle(reject, new Error('TIMEOUT_UPLOAD')),
-      timeoutMs
-    );
+    uploadTimer = setTimeout(() => {
+      try { xhr.abort(); } catch (e) {}
+      settle(reject, new Error('TIMEOUT_UPLOAD'));
+    }, timeoutMs);
 
     xhr.upload.addEventListener('progress', e => {
-      if(!e.lengthComputable) return;
+      if (!e.lengthComputable) return;
       const pct = Math.min(99, Math.round(e.loaded / e.total * 100));
-      setProgress(pct, `Subiendo${labelExtra}… ${pct}%`);
+      setProgress(pct, 'Subiendo' + labelExtra + '… ' + pct + '%');
     });
 
     xhr.upload.addEventListener('load', () => {
       clearTimeout(uploadTimer);
       uploadTimer = null;
       setProgress(99, '📡 Imagen enviada. Servidor procesando…');
-      responseTimer = setTimeout(
-        () => { xhr.abort(); settle(reject, new Error('TIMEOUT_RESPONSE')); },
-        timeoutMs // Mismo timeout para respuesta
-      );
+      responseTimer = setTimeout(() => {
+        try { xhr.abort(); } catch (e) {}
+        settle(reject, new Error('TIMEOUT_RESPONSE'));
+      }, timeoutMs);
     });
 
     xhr.addEventListener('load', () => {
-      if(xhr.status >= 200 && xhr.status < 300){
+      if (xhr.status >= 200 && xhr.status < 300) {
         setProgress(100, '¡Reserva confirmada! ✅');
         settle(resolve, xhr.responseText);
-      } else if(xhr.status === 0){
+      } else if (xhr.status === 0) {
         settle(reject, new Error('ERROR_RED'));
       } else {
         settle(reject, new Error('HTTP_' + xhr.status));
@@ -542,30 +584,32 @@ function singleUpload(formData, labelExtra, timeoutMs){
 /* ══════════════════════════════════════════
    REINTENTOS CON BACKOFF EXPONENCIAL
 ══════════════════════════════════════════ */
-async function uploadConReintentos(formData, fileSize){
+async function uploadConReintentos(buildFormData, fileSize) {
   const timeoutMs = getTimeoutForSize(fileSize);
   let ultimoError;
 
-  for(let i = 0; i < MAX_INTENTOS; i++){
-    if(i > 0){
+  for (let i = 0; i < MAX_INTENTOS; i++) {
+    if (i > 0) {
       const delay = getRetryDelay(i - 1);
-      setProgress(0, `Reintentando en ${Math.round(delay/1000)}s…`);
+      setProgress(0, 'Reintentando en ' + Math.round(delay / 1000) + 's…');
       await new Promise(r => setTimeout(r, delay));
     }
 
-    const label = i > 0 ? ` (intento ${i+1}/${MAX_INTENTOS})` : '';
+    const label = i > 0 ? ' (intento ' + (i + 1) + '/' + MAX_INTENTOS + ')' : '';
     setRetryBadge(i + 1);
 
     try {
-      return await singleUpload(formData, label, timeoutMs);
-    } catch(err){
+      // Se reconstruye el FormData en cada intento: un FormData ya enviado
+      // no se puede reutilizar de forma fiable.
+      return await singleUpload(buildFormData(), label, timeoutMs);
+    } catch (err) {
       ultimoError = err;
-      console.warn(`Intento ${i+1} fallido:`, err.message);
-      
+      console.warn('Intento ' + (i + 1) + ' fallido:', err.message);
+
       // No reintentar errores del cliente (4xx)
-      if(err.message.startsWith('HTTP_4')) break;
-      // No reintentar si el servidor ya recibió la imagen pero no respondió
-      if(err.message === 'TIMEOUT_RESPONSE') break;
+      if (err.message.indexOf('HTTP_4') === 0) break;
+      // No reintentar si el servidor ya recibió la imagen pero tardó en responder
+      if (err.message === 'TIMEOUT_RESPONSE') break;
     }
   }
 
@@ -575,18 +619,16 @@ async function uploadConReintentos(formData, fileSize){
 /* ══════════════════════════════════════════
    ENVIAR
 ══════════════════════════════════════════ */
-async function enviar(){
-  if(enviando) return;
+async function enviar() {
+  if (enviando) return;
 
-  if(!destino)  { alert('Selecciona un destino');        return; }
-  if(!precio)   { alert('Selecciona una tarifa');        return; }
-  if(!fotoBlob) { alert('Adjunta tu foto de identidad'); return; }
+  if (!destino)  { alert('Selecciona un destino');        return; }
+  if (!precio)   { alert('Selecciona una tarifa');        return; }
+  if (!fotoBlob) { alert('Adjunta tu foto de identidad'); return; }
 
-  // Verificar conectividad antes de enviar
-  const isOnline = await checkConnectivity();
-  if(!isOnline){
-    const continuar = confirm('📶 Parece que no tienes conexión estable.\n\n¿Quieres intentar enviar de todos modos?');
-    if(!continuar) return;
+  if (!navigator.onLine) {
+    const continuar = confirm('📶 Parece que no tienes conexión a internet.\n\n¿Quieres intentar enviar de todos modos?');
+    if (!continuar) return;
   }
 
   const btn          = document.getElementById('submitBtn');
@@ -598,40 +640,52 @@ async function enviar(){
   progressWrap.style.display = 'block';
   setProgress(0, 'Preparando datos…');
 
-  const chatId   = tg?.initDataUnsafe?.user?.id       || '';
-  const username = tg?.initDataUnsafe?.user?.username || '';
+  // Datos de Telegram:
+  // - initDataUnsafe NO es de fiar (lo puede falsificar el cliente). Se usa solo
+  //   para enviar valores "de cortesía".
+  // - tg.initData es la cadena FIRMADA; n8n debe verificar su HMAC con el token
+  //   del bot para confiar en el usuario. Por eso se envía aparte.
+  const initUnsafe = (tg && tg.initDataUnsafe) ? tg.initDataUnsafe : {};
+  const chatId     = (initUnsafe.user && initUnsafe.user.id)       ? String(initUnsafe.user.id) : '';
+  const username   = (initUnsafe.user && initUnsafe.user.username) ? String(initUnsafe.user.username) : '';
+  const initData   = (tg && tg.initData) ? tg.initData : '';
 
-  const fd = new FormData();
-  fd.append('destino',            destino);
-  fd.append('precio',             precio);
-  fd.append('precio_label',       precioLabel);
-  fd.append('chat_id',            chatId);
-  fd.append('username',           username);
-  fd.append('wa_phone',           _waPhone);
-  fd.append('wa_name',            _waName);
-  fd.append('wa_phone_number_id', _waPhoneNumberId);
-  fd.append('foto', fotoBlob, 'documento.jpg');
+  const buildFormData = () => {
+    const fd = new FormData();
+    fd.append('destino',            destino);
+    fd.append('precio',             precio);
+    fd.append('precio_label',       precioLabel);
+    fd.append('chat_id',            chatId);
+    fd.append('username',           username);
+    fd.append('tg_init_data',       initData);          // <-- verificar en n8n
+    fd.append('codigo',             _codigoSesion);
+    fd.append('wa_phone',           _waPhone);
+    fd.append('wa_name',            _waName);
+    fd.append('wa_phone_number_id', _waPhoneNumberId);
+    fd.append('foto', fotoBlob, 'documento.jpg');
+    return fd;
+  };
 
   try {
-    await uploadConReintentos(fd, fotoBlob.size);
+    await uploadConReintentos(buildFormData, fotoBlob.size);
 
     setTimeout(() => {
       document.getElementById('success-screen').classList.add('visible');
     }, 500);
 
-  } catch(err){
+  } catch (err) {
     enviando = false;
     progressWrap.style.display = 'none';
-    btn.disabled   = false;
-    btn.innerHTML  = '🚢 Confirmar Reserva';
+    btn.disabled = false;
+    btn.innerHTML = '🚢 Confirmar Reserva';
     setRetryBadge(0);
 
-    const msg = err?.message || '';
-    if(msg === 'TIMEOUT_UPLOAD'){
+    const msg = (err && err.message) ? err.message : '';
+    if (msg === 'TIMEOUT_UPLOAD') {
       alert('⏱️ La imagen tardó demasiado en subirse tras ' + MAX_INTENTOS + ' intentos.\n\nComprueba tu conexión e inténtalo de nuevo, o usa una imagen más pequeña.');
-    } else if(msg === 'TIMEOUT_RESPONSE'){
-      alert('⏳ La imagen se envió pero el servidor tardó en confirmar.\n\nEs muy probable que tu reserva ya esté registrada. Espera unos segundos y revisa si recibiste mensaje antes de volver a intentarlo.');
-    } else if(msg === 'ERROR_RED'){
+    } else if (msg === 'TIMEOUT_RESPONSE') {
+      alert('⏳ La imagen se envió pero el servidor tardó en confirmar.\n\nEs muy probable que tu reserva ya esté registrada. Espera unos segundos y revisa si recibiste el mensaje antes de volver a intentarlo.');
+    } else if (msg === 'ERROR_RED') {
       alert('📶 Sin conexión a internet.\n\nComprueba tu red e inténtalo de nuevo.');
     } else {
       alert('❌ Error al enviar (' + msg + ').\n\nInténtalo de nuevo en unos segundos.');
@@ -643,18 +697,34 @@ async function enviar(){
 /* ══════════════════════════════════════════
    VOLVER A WHATSAPP
 ══════════════════════════════════════════ */
-function volverWhatsApp(){
-  if(tg){ tg.close(); return; }
+function volverWhatsApp() {
+  if (tg) { try { tg.close(); } catch (e) {} return; }
   try {
     window.location.href = 'whatsapp://';
     setTimeout(() => window.history.back(), 1500);
-  } catch(e){
+  } catch (e) {
     window.history.back();
   }
 }
 
-// Verificar conectividad al cargar la página
-checkConnectivity();
+/* ══════════════════════════════════════════
+   ENLACE DE EVENTOS (sin onclick en el HTML)
+══════════════════════════════════════════ */
+document.getElementById('destinos').addEventListener('click', e => {
+  const el = e.target.closest('.dest-btn');
+  if (el) selectDest(el, el.dataset.dest);
+});
+document.getElementById('precios').addEventListener('click', e => {
+  const el = e.target.closest('.price-btn');
+  if (el) selectPrice(el, el.dataset.precio, el.dataset.label);
+});
+document.getElementById('photoInput').addEventListener('change', function () { handlePhoto(this); });
+document.getElementById('changeBtn').addEventListener('click', changePhoto);
+document.getElementById('submitBtn').addEventListener('click', enviar);
+document.getElementById('waBtn').addEventListener('click', volverWhatsApp);
+
+// Estado inicial de conectividad
+refreshConn();
 </script>
 </body>
 </html>
