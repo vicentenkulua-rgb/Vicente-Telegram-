@@ -26,21 +26,21 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
-:root{--blue:#0055A4;--blue-dark:#003B73;--blue-light:#2F86D6;--blue-bright:#4FC3F7;--white:#ffffff;--gray:#f0f0f0;--text:#1a1a1a;--muted:#888;}
-.header{background:linear-gradient(135deg,#001B3D 0%,var(--blue) 60%,var(--blue-dark) 100%);padding:20px 16px 16px;text-align:center;position:relative;overflow:hidden;}
+:root{--blue:#0066CC;--blue-dark:#004C99;--blue-light:#3399FF;--white:#ffffff;--gray:#f0f0f0;--text:#1a1a1a;--muted:#888;--green:#006B3F;}
+.header{background:linear-gradient(135deg,#001a33 0%,#0066CC 60%,#004C99 100%);padding:20px 16px 16px;text-align:center;position:relative;overflow:hidden;}
 .header::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.06);border-radius:50%;}
-.header::after{content:'';position:absolute;bottom:-20px;left:-20px;width:80px;height:80px;background:rgba(255,255,255,0.12);border-radius:50%;}
-.ferry-name{font-size:clamp(20px,6.5vw,32px);font-weight:900;color:var(--blue-bright);letter-spacing:2px;text-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;z-index:1;white-space:nowrap;}
-.ferry-sub{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-top:4px;position:relative;z-index:1;}
-.header-line{width:40px;height:2px;background:rgba(255,255,255,0.85);margin:10px auto 0;border-radius:2px;position:relative;z-index:1;}
+.header::after{content:'';position:absolute;bottom:-20px;left:-20px;width:80px;height:80px;background:rgba(255,255,255,0.1);border-radius:50%;}
+.ferry-name{font-size:32px;font-weight:900;color:#0066CC;letter-spacing:3px;text-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;z-index:1;}
+.ferry-sub{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.9);margin-top:4px;position:relative;z-index:1;}
+.header-line{width:40px;height:2px;background:#ffffff;margin:10px auto 0;border-radius:2px;position:relative;z-index:1;}
 .body{padding:16px 14px 24px;}
 .sec-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.sec-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(0,85,164,0.2),transparent);}
+.sec-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(0,102,204,0.2),transparent);}
 .destinos-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
 .dest-btn{border:2px solid #ddd;border-radius:14px;background:#fff;padding:12px 6px;text-align:center;cursor:pointer;transition:all 0.2s ease;position:relative;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.06);}
 .dest-btn .dest-name{font-size:13px;font-weight:700;color:var(--text);}
 .dest-btn .dest-country{font-size:10px;color:var(--muted);margin-top:2px;}
-.dest-btn.selected{border-color:var(--blue);background:linear-gradient(135deg,#eef6ff,#d6ebff);box-shadow:0 4px 14px rgba(0,85,164,0.22);transform:translateY(-2px);}
+.dest-btn.selected{border-color:var(--blue);background:linear-gradient(135deg,#f0f6ff,#d9e8ff);box-shadow:0 4px 14px rgba(0,102,204,0.25);transform:translateY(-2px);}
 .dest-btn.selected .dest-name{color:var(--blue);}
 .dest-btn.selected::after{content:'✓';position:absolute;top:5px;right:7px;font-size:10px;font-weight:900;color:var(--blue);}
 .precios-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
@@ -48,13 +48,21 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .price-amount{font-size:15px;font-weight:900;color:var(--text);line-height:1;}
 .price-fcfa{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
 .price-type{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:6px;padding:3px 6px;border-radius:6px;display:inline-block;}
-/* Las 3 tarifas comparten el mismo acento azul de marca; se diferencian por su texto (Económico/Business/VIP). */
-.price-btn .price-type{color:var(--blue);background:rgba(0,85,164,0.08);}
-.price-btn.selected{border-color:var(--blue);background:linear-gradient(135deg,#eef6ff,#d6ebff);box-shadow:0 4px 14px rgba(0,85,164,0.22);transform:translateY(-2px);}
-.price-btn.selected .price-amount{color:var(--blue);}
-.price-btn.selected::after{content:'✓';position:absolute;top:5px;right:7px;font-size:10px;font-weight:900;color:var(--blue);}
-.upload-area{border:2px dashed rgba(0,85,164,0.25);border-radius:16px;background:#fff;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
-.upload-area:active{border-color:var(--blue);background:#eef6ff;}
+.price-btn.eco .price-type{color:var(--green);background:rgba(0,107,63,0.08);}
+.price-btn.eco.selected{border-color:var(--green);background:linear-gradient(135deg,#f0fff7,#d4f5e5);box-shadow:0 4px 14px rgba(0,107,63,0.2);transform:translateY(-2px);}
+.price-btn.eco.selected .price-amount{color:var(--green);}
+.price-btn.biz .price-type{color:var(--blue);background:rgba(0,102,204,0.08);}
+.price-btn.biz.selected{border-color:var(--blue);background:linear-gradient(135deg,#f0f6ff,#d9e8ff);box-shadow:0 4px 14px rgba(0,102,204,0.2);transform:translateY(-2px);}
+.price-btn.biz.selected .price-amount{color:var(--blue);}
+.price-btn.vip .price-type{color:#b8860b;background:rgba(184,134,11,0.08);}
+.price-btn.vip.selected{border-color:#b8860b;background:linear-gradient(135deg,#fffdf0,#fef3c0);box-shadow:0 4px 14px rgba(184,134,11,0.2);transform:translateY(-2px);}
+.price-btn.vip.selected .price-amount{color:#b8860b;}
+.price-btn.selected::after{content:'✓';position:absolute;top:5px;right:7px;font-size:10px;font-weight:900;}
+.price-btn.eco.selected::after{color:var(--green);}
+.price-btn.biz.selected::after{color:var(--blue);}
+.price-btn.vip.selected::after{color:#b8860b;}
+.upload-area{border:2px dashed rgba(0,102,204,0.25);border-radius:16px;background:#fff;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.upload-area:active{border-color:var(--blue);background:#f0f6ff;}
 .upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .upload-icon{font-size:34px;margin-bottom:8px;}
 .upload-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;}
@@ -68,8 +76,8 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .preview-bar span{font-size:12px;color:#fff;font-weight:600;}
 .preview-size{font-size:10px;color:rgba(255,255,255,0.65);}
 .change-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;}
-.submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--blue-light),var(--blue-dark));border:none;border-radius:16px;color:#fff;font-size:17px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(0,85,164,0.35);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
-.submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(0,85,164,0.3);}
+.submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--blue-light),var(--blue-dark));border:none;border-radius:16px;color:#fff;font-size:17px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 20px rgba(0,102,204,0.35);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.submit-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(0,102,204,0.3);}
 .submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
 
 /* ── INDICADOR DE CONECTIVIDAD ── */
@@ -107,8 +115,6 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 .body>*:nth-child(6){animation-delay:0.3s}
 .body>*:nth-child(7){animation-delay:0.35s}
 .body>*:nth-child(8){animation-delay:0.4s}
-.body>*:nth-child(9){animation-delay:0.45s}
-.body>*:nth-child(10){animation-delay:0.5s}
 
 /* ── PANTALLA DE ÉXITO ── */
 #success-screen{display:none;position:fixed;inset:0;background:#f8f8f8;z-index:1000;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;}
@@ -117,11 +123,11 @@ html,body{height:100%;background:#f8f8f8;font-family:-apple-system,BlinkMacSyste
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse-ring{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.5);opacity:0}}
 .success-ring{position:relative;width:100px;height:100px;margin-bottom:28px;}
-.success-ring::before{content:'';position:absolute;inset:-10px;border-radius:50%;border:3px solid var(--blue-light);animation:pulse-ring 1.8s ease-out 0.4s infinite;}
-.success-icon{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--blue-light),var(--blue-dark));display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 8px 28px rgba(0,85,164,0.35);animation:scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
+.success-ring::before{content:'';position:absolute;inset:-10px;border-radius:50%;border:3px solid var(--green);animation:pulse-ring 1.8s ease-out 0.4s infinite;}
+.success-icon{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#00a86b,var(--green));display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 8px 28px rgba(0,107,63,0.35);animation:scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;}
 .success-title{font-size:22px;font-weight:900;color:#1a1a1a;letter-spacing:0.3px;margin-bottom:10px;animation:fadeUp 0.4s ease 0.3s both;}
 .success-subtitle{font-size:14px;color:#555;line-height:1.7;margin-bottom:10px;max-width:280px;animation:fadeUp 0.4s ease 0.45s both;}
-.success-divider{width:44px;height:3px;background:linear-gradient(to right,var(--blue-light),var(--blue-dark));border-radius:99px;margin:0 auto 28px;animation:fadeUp 0.4s ease 0.5s both;}
+.success-divider{width:44px;height:3px;background:linear-gradient(to right,var(--blue),var(--green));border-radius:99px;margin:0 auto 28px;animation:fadeUp 0.4s ease 0.5s both;}
 .wa-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:340px;padding:16px 20px;background:linear-gradient(135deg,#25d366,#128c7e);border:none;border-radius:16px;color:#fff;font-size:16px;font-weight:800;letter-spacing:0.5px;cursor:pointer;box-shadow:0 6px 20px rgba(37,211,102,0.35);animation:fadeUp 0.4s ease 0.6s both;transition:transform 0.15s,box-shadow 0.15s;font-family:inherit;}
 .wa-btn:active{transform:scale(0.97);box-shadow:0 3px 10px rgba(37,211,102,0.25);}
 .wa-icon{font-size:22px;line-height:1;}
@@ -505,220 +511,4 @@ async function handlePhoto(input) {
     fotoBlob = null;
     alert('Error al procesar la imagen. Inténtalo con otra foto (por ejemplo en formato JPG o PNG).');
     console.error(err);
-    input.value = '';
-  }
-}
-
-function changePhoto() {
-  fotoBlob = null;
-  if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
-  document.getElementById('photoInput').value = '';
-  document.getElementById('preview-box').style.display = 'none';
-  document.getElementById('uploadArea').style.display = '';
-}
-
-/* ══════════════════════════════════════════
-   UPLOAD CON XHR + TIMEOUT ADAPTATIVO
-══════════════════════════════════════════ */
-function singleUpload(formData, labelExtra, timeoutMs) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    let uploadTimer   = null;
-    let responseTimer = null;
-    let settled       = false;
-
-    const settle = (fn, val) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(uploadTimer);
-      clearTimeout(responseTimer);
-      fn(val);
-    };
-
-    uploadTimer = setTimeout(() => {
-      try { xhr.abort(); } catch (e) {}
-      settle(reject, new Error('TIMEOUT_UPLOAD'));
-    }, timeoutMs);
-
-    xhr.upload.addEventListener('progress', e => {
-      if (!e.lengthComputable) return;
-      const pct = Math.min(99, Math.round(e.loaded / e.total * 100));
-      setProgress(pct, 'Subiendo' + labelExtra + '… ' + pct + '%');
-    });
-
-    xhr.upload.addEventListener('load', () => {
-      clearTimeout(uploadTimer);
-      uploadTimer = null;
-      setProgress(99, '📡 Imagen enviada. Servidor procesando…');
-      responseTimer = setTimeout(() => {
-        try { xhr.abort(); } catch (e) {}
-        settle(reject, new Error('TIMEOUT_RESPONSE'));
-      }, timeoutMs);
-    });
-
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        setProgress(100, '¡Reserva confirmada! ✅');
-        settle(resolve, xhr.responseText);
-      } else if (xhr.status === 0) {
-        settle(reject, new Error('ERROR_RED'));
-      } else {
-        settle(reject, new Error('HTTP_' + xhr.status));
-      }
-    });
-
-    xhr.addEventListener('error', () => settle(reject, new Error('ERROR_RED')));
-    xhr.addEventListener('abort', () => settle(reject, new Error('ERROR_RED')));
-
-    xhr.open('POST', WEBHOOK_URL);
-    xhr.send(formData);
-  });
-}
-
-/* ══════════════════════════════════════════
-   REINTENTOS CON BACKOFF EXPONENCIAL
-══════════════════════════════════════════ */
-async function uploadConReintentos(buildFormData, fileSize) {
-  const timeoutMs = getTimeoutForSize(fileSize);
-  let ultimoError;
-
-  for (let i = 0; i < MAX_INTENTOS; i++) {
-    if (i > 0) {
-      const delay = getRetryDelay(i - 1);
-      setProgress(0, 'Reintentando en ' + Math.round(delay / 1000) + 's…');
-      await new Promise(r => setTimeout(r, delay));
-    }
-
-    const label = i > 0 ? ' (intento ' + (i + 1) + '/' + MAX_INTENTOS + ')' : '';
-    setRetryBadge(i + 1);
-
-    try {
-      // Se reconstruye el FormData en cada intento: un FormData ya enviado
-      // no se puede reutilizar de forma fiable.
-      return await singleUpload(buildFormData(), label, timeoutMs);
-    } catch (err) {
-      ultimoError = err;
-      console.warn('Intento ' + (i + 1) + ' fallido:', err.message);
-
-      // No reintentar errores del cliente (4xx)
-      if (err.message.indexOf('HTTP_4') === 0) break;
-      // No reintentar si el servidor ya recibió la imagen pero tardó en responder
-      if (err.message === 'TIMEOUT_RESPONSE') break;
-    }
-  }
-
-  throw ultimoError;
-}
-
-/* ══════════════════════════════════════════
-   ENVIAR
-══════════════════════════════════════════ */
-async function enviar() {
-  if (enviando) return;
-
-  if (!destino)  { alert('Selecciona un destino');        return; }
-  if (!precio)   { alert('Selecciona una tarifa');        return; }
-  if (!fotoBlob) { alert('Adjunta tu foto de identidad'); return; }
-
-  if (!navigator.onLine) {
-    const continuar = confirm('📶 Parece que no tienes conexión a internet.\n\n¿Quieres intentar enviar de todos modos?');
-    if (!continuar) return;
-  }
-
-  const btn          = document.getElementById('submitBtn');
-  const progressWrap = document.getElementById('progress-wrap');
-
-  enviando        = true;
-  btn.disabled    = true;
-  btn.textContent = 'Enviando…';
-  progressWrap.style.display = 'block';
-  setProgress(0, 'Preparando datos…');
-
-  // Datos de Telegram:
-  // - initDataUnsafe NO es de fiar (lo puede falsificar el cliente). Se usa solo
-  //   para enviar valores "de cortesía".
-  // - tg.initData es la cadena FIRMADA; n8n debe verificar su HMAC con el token
-  //   del bot para confiar en el usuario. Por eso se envía aparte.
-  const initUnsafe = (tg && tg.initDataUnsafe) ? tg.initDataUnsafe : {};
-  const chatId     = (initUnsafe.user && initUnsafe.user.id)       ? String(initUnsafe.user.id) : '';
-  const username   = (initUnsafe.user && initUnsafe.user.username) ? String(initUnsafe.user.username) : '';
-  const initData   = (tg && tg.initData) ? tg.initData : '';
-
-  const buildFormData = () => {
-    const fd = new FormData();
-    fd.append('destino',            destino);
-    fd.append('precio',             precio);
-    fd.append('precio_label',       precioLabel);
-    fd.append('chat_id',            chatId);
-    fd.append('username',           username);
-    fd.append('tg_init_data',       initData);          // <-- verificar en n8n
-    fd.append('codigo',             _codigoSesion);
-    fd.append('wa_phone',           _waPhone);
-    fd.append('wa_name',            _waName);
-    fd.append('wa_phone_number_id', _waPhoneNumberId);
-    fd.append('foto', fotoBlob, 'documento.jpg');
-    return fd;
-  };
-
-  try {
-    await uploadConReintentos(buildFormData, fotoBlob.size);
-
-    setTimeout(() => {
-      document.getElementById('success-screen').classList.add('visible');
-    }, 500);
-
-  } catch (err) {
-    enviando = false;
-    progressWrap.style.display = 'none';
-    btn.disabled = false;
-    btn.innerHTML = '🚢 Confirmar Reserva';
-    setRetryBadge(0);
-
-    const msg = (err && err.message) ? err.message : '';
-    if (msg === 'TIMEOUT_UPLOAD') {
-      alert('⏱️ La imagen tardó demasiado en subirse tras ' + MAX_INTENTOS + ' intentos.\n\nComprueba tu conexión e inténtalo de nuevo, o usa una imagen más pequeña.');
-    } else if (msg === 'TIMEOUT_RESPONSE') {
-      alert('⏳ La imagen se envió pero el servidor tardó en confirmar.\n\nEs muy probable que tu reserva ya esté registrada. Espera unos segundos y revisa si recibiste el mensaje antes de volver a intentarlo.');
-    } else if (msg === 'ERROR_RED') {
-      alert('📶 Sin conexión a internet.\n\nComprueba tu red e inténtalo de nuevo.');
-    } else {
-      alert('❌ Error al enviar (' + msg + ').\n\nInténtalo de nuevo en unos segundos.');
-    }
-    console.error('Error final:', err);
-  }
-}
-
-/* ══════════════════════════════════════════
-   VOLVER A WHATSAPP
-══════════════════════════════════════════ */
-function volverWhatsApp() {
-  if (tg) { try { tg.close(); } catch (e) {} return; }
-  try {
-    window.location.href = 'whatsapp://';
-    setTimeout(() => window.history.back(), 1500);
-  } catch (e) {
-    window.history.back();
-  }
-}
-
-/* ══════════════════════════════════════════
-   ENLACE DE EVENTOS (sin onclick en el HTML)
-══════════════════════════════════════════ */
-document.getElementById('destinos').addEventListener('click', e => {
-  const el = e.target.closest('.dest-btn');
-  if (el) selectDest(el, el.dataset.dest);
-});
-document.getElementById('precios').addEventListener('click', e => {
-  const el = e.target.closest('.price-btn');
-  if (el) selectPrice(el, el.dataset.precio, el.dataset.label);
-});
-document.getElementById('photoInput').addEventListener('change', function () { handlePhoto(this); });
-document.getElementById('changeBtn').addEventListener('click', changePhoto);
-document.getElementById('submitBtn').addEventListener('click', enviar);
-document.getElementById('waBtn').addEventListener('click', volverWhatsApp);
-
-// Estado inicial de conectividad
-refreshConn();
-</script>
-</body>
-</html>
+    input
