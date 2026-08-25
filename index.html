@@ -51,13 +51,13 @@
       border-bottom: 2px solid var(--red);
     }
     .ferry-name {
-      /* Tamaño responsivo: entre 15px y 32px, con espaciado ajustable */
-      font-size: clamp(15px, 4vw, 32px);
+      /* Tamaño y espaciado adaptados para que quepa en una línea en cualquier móvil */
+      font-size: clamp(12px, 3.2vw, 28px);
       font-weight: 900;
       color: var(--red);
-      letter-spacing: clamp(0.5px, 0.2vw, 3px);
+      letter-spacing: clamp(0px, 0.1vw, 2px);
       text-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      white-space: nowrap;        /* Evita que se parta en dos líneas */
+      white-space: nowrap;        /* Fuerza una sola línea */
     }
     .ferry-sub {
       font-size: 11px;
