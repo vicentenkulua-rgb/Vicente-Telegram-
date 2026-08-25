@@ -43,7 +43,6 @@
       --muted: #888;
     }
 
-    /* HEADER – fondo blanco, letras rojas */
     .header {
       background: var(--white);
       padding: 20px 16px 16px;
@@ -52,11 +51,13 @@
       border-bottom: 2px solid var(--red);
     }
     .ferry-name {
-      font-size: 32px;
+      /* Tamaño responsivo: entre 15px y 32px, con espaciado ajustable */
+      font-size: clamp(15px, 4vw, 32px);
       font-weight: 900;
       color: var(--red);
-      letter-spacing: 3px;
+      letter-spacing: clamp(0.5px, 0.2vw, 3px);
       text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      white-space: nowrap;        /* Evita que se parta en dos líneas */
     }
     .ferry-sub {
       font-size: 11px;
@@ -343,7 +344,6 @@
       font-family: inherit;
     }
 
-    /* BOTÓN AZUL */
     .submit-btn {
       width: 100%;
       padding: 16px;
@@ -372,7 +372,6 @@
       cursor: not-allowed;
     }
 
-    /* INDICADOR DE CONECTIVIDAD */
     #conn-indicator {
       display: flex;
       align-items: center;
@@ -399,7 +398,6 @@
       background: #ef4444;
     }
 
-    /* BARRA DE PROGRESO */
     #progress-wrap {
       display: none;
       margin-bottom: 16px;
@@ -455,7 +453,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* OVERLAY COMPRESIÓN */
     #compress-overlay {
       display: none;
       position: fixed;
@@ -488,7 +485,6 @@
       letter-spacing: 1px;
     }
 
-    /* ANIMACIONES */
     @keyframes slideUp {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
@@ -508,7 +504,6 @@
     .body > *:nth-child(7) { animation-delay: 0.35s; }
     .body > *:nth-child(8) { animation-delay: 0.40s; }
 
-    /* PANTALLA DE ÉXITO */
     #success-screen {
       display: none;
       position: fixed;
@@ -641,7 +636,7 @@
 </head>
 <body>
 
-  <!-- PANTALLA DE ÉXITO -->
+  <!-- Pantalla de éxito -->
   <div id="success-screen">
     <div class="success-ring">
       <div class="success-icon">✅</div>
@@ -756,7 +751,7 @@
     /* ══════════════════════════════════════════ CONFIGURACIÓN ══════════════════════════════════════════ */
     const WEBHOOK_URL = 'https://oveng21.app.n8n.cloud/webhook/920417b7-c4a7-4747-97e7-759441ee66fa';
     const MAX_INTENTOS = 3;
-    const TARGET_FILE_BYTES = 250000; // ~250 KB
+    const TARGET_FILE_BYTES = 250000;
     const MAX_IMAGE_DIMENSION = 1200;
     const MAX_INPUT_BYTES = 25 * 1024 * 1024;
     const BASE_TIMEOUT_MS = 30000;
